@@ -191,7 +191,7 @@ func initAlertEngine(appConfig AppConfig, notifier ntfy.Notifier, logger *slog.L
 		MetricName: batterySensorName,
 		Enabled:    true,
 		Condition: func(metric alert.Metric) bool {
-			return metric.Name == batterySensorName && metric.Value >= 10.0
+			return metric.Name == batterySensorName && metric.Value >= 15.0
 		},
 		Action: alert.LogAction(logger),
 	})
@@ -202,7 +202,7 @@ func initAlertEngine(appConfig AppConfig, notifier ntfy.Notifier, logger *slog.L
 		MetricName: batterySensorName,
 		Enabled:    true,
 		Condition: func(metric alert.Metric) bool {
-			return metric.Name == batterySensorName && metric.Value < 10.0 && metric.Value >= 5.0
+			return metric.Name == batterySensorName && metric.Value < 15.0 && metric.Value >= 10.0
 		},
 		Action: alert.MultiAction(
 			alert.LogAction(logger),
@@ -216,7 +216,7 @@ func initAlertEngine(appConfig AppConfig, notifier ntfy.Notifier, logger *slog.L
 		MetricName: batterySensorName,
 		Enabled:    true,
 		Condition: func(metric alert.Metric) bool {
-			return metric.Name == batterySensorName && metric.Value < 5.0
+			return metric.Name == batterySensorName && metric.Value < 10.0
 		},
 		Action: alert.MultiAction(
 			alert.LogAction(logger),
