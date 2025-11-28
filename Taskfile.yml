@@ -1,0 +1,39 @@
+# https://taskfile.dev
+
+version: "3"
+
+vars:
+  GREETING: Hello, World!
+  DOCKER_BIN: nerdctl
+
+tasks:
+  default:
+    cmds:
+      - echo "{{.GREETING}}"
+    silent: true
+  "release:helm":
+    cmds:
+      - helm package helm
+      - helm push scmprober-*.tgz oci://registry-1.docker.io/tauho
+      - rm scmprober-*.tgz
+
+  "release:docker":
+    cmds:
+      - "{{.DOCKER_BIN}} tag scmprober:latest docker.io/tauho/scmprober:latest"
+      - "{{.DOCKER_BIN}} push docker.io/tauho/scmprober:latest"
+      - "{{.DOCKER_BIN}} tag scmprober:latest docker.io/tauho/scmprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} push docker.io/tauho/scmprober:{{.VERSION}}"
+    vars:
+      VERSION:
+        sh: "$(cat VERSION)"
+
+  "build:docker":
+    cmds:
+      - "{{.DOCKER_BIN}} build -t scmprober:latest -f Dockerfile ."
+
+  "run:docker":
+    cmds:
+      - "mkdir -p config secrets"
+      - "{{.DOCKER_BIN}} run --rm --volume {{.PWD}}/config:/app/config:ro --volume {{.PWD}}/secrets:/app/secrets:ro scmprober:latest"
+    deps:
+      - build:docker
