@@ -5,6 +5,7 @@ version: "3"
 vars:
   GREETING: Hello, World!
   DOCKER_BIN: nerdctl
+  DOCKER_HOST: docker.io
 
 tasks:
   default:
@@ -13,19 +14,27 @@ tasks:
     silent: true
   "release:helm":
     cmds:
-      - helm package helm
+      - helm package helm --app-version "{{.VERSION}}"
       - helm push scmprober-*.tgz oci://registry-1.docker.io/tauho
       - rm scmprober-*.tgz
+    vars:
+      VERSION:
+        sh: "cat VERSION"
 
   "release:docker":
     cmds:
-      - "{{.DOCKER_BIN}} tag scmprober:latest docker.io/tauho/scmprober:latest"
-      - "{{.DOCKER_BIN}} push docker.io/tauho/scmprober:latest"
-      - "{{.DOCKER_BIN}} tag scmprober:latest docker.io/tauho/scmprober:{{.VERSION}}"
-      - "{{.DOCKER_BIN}} push docker.io/tauho/scmprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} tag scmprober:latest {{.DOCKER_HOST}}/tauho/scmprober:latest"
+      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} tag scmprober:latest {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
     vars:
       VERSION:
-        sh: "$(cat VERSION)"
+        sh: "cat VERSION"
+
+  release:
+    cmds:
+      - task release:docker
+      - task release:helm
 
   "build:docker":
     cmds:

@@ -10,4 +10,4 @@ FROM gcr.io/distroless/static:nonroot
 
 WORKDIR /app
 COPY --from=builder /go/bin/scmprober /app/scmprober
-CMD ["/app/scmprober", "--config", "/app/config/config.json"]
+CMD ["/app/scmprober", "--config", "/app/configs/config.json"]

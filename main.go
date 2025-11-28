@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/timgluz/smcprober/alert"
 	"github.com/timgluz/smcprober/httpclient"
 	"github.com/timgluz/smcprober/ntfy"
@@ -15,6 +17,7 @@ import (
 )
 
 const (
+	DefaultConfigPath      = "configs/config.json"
 	DefaultNtfyEndpoint    = "https://ntfy.sh"
 	DefaultNtfyTopic       = "lu_bismarck72_alerts"
 	DefaultNtfyTokenEnvVar = "NTFY_TOKEN"
@@ -26,6 +29,9 @@ const (
 
 type AppConfig struct {
 	BatterySensorName string `json:"battery_sensor_name"`
+
+	LogLevel   string `json:"log_level"`
+	DotEnvPath string `json:"dotenv_path"`
 
 	Ntfy NtfyConfig         `json:"ntfy"`
 	Smc  SmartCitizenConfig `json:"smartcitizen"`
@@ -78,14 +84,22 @@ func (c *SmartCitizenConfig) ApplyDefaults() {
 }
 
 func main() {
-	configPath := "config.json"
+	var configPath string
 
-	flag.StringVar(&configPath, "config", configPath, "Path to configuration file")
+	flag.StringVar(&configPath, "config", DefaultConfigPath, "Path to configuration file")
 	flag.Parse()
 
 	appConfig, err := loadConfigFromJSONFile(configPath)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error loading config:", err)
+		os.Exit(1)
+	}
+
+	if appConfig.DotEnvPath != "" {
+		if err := godotenv.Load(appConfig.DotEnvPath); err != nil {
+			fmt.Println("Error loading .env file:", err)
+			os.Exit(1)
+		}
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{

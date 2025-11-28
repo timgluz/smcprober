@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "helm.fullname" . }}
+  namespace: {{ .Values.namespace }}
   labels:
     {{- include "helm.labels" . | nindent 4 }}
 spec:
@@ -40,22 +41,6 @@ spec:
           {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: SMARTCITIZEN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: scmprober-secrets
-                  key: SMARTCITIZEN_USERNAME
-            - name: SMARTCITIZEN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: scmprober-secrets
-                  key: SMARTCITIZEN_PASSWORD
-            - name: NTFY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: scmprober-secrets
-                  key: NTFY_TOKEN 
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
