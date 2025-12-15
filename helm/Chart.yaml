@@ -1,6 +1,6 @@
 apiVersion: v2
-name: scmprober
-description: A Helm chart for deploying ScmProber application
+name: smcprober
+description: A Helm chart for deploying smcprober application
 
 # A chart can be either an 'application' or a 'library' chart.
 #

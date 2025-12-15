@@ -33,3 +33,5 @@ go.work.sum
 # .vscode/
 secrets/*
 !secrets/env.example
+
+smcprober.yaml

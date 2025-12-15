@@ -1,0 +1,16 @@
+{
+  "dotenv_path": "/app/secrets/env",
+  "log_level": "INFO",
+  "battery_sensor_name": "Battery SCK",
+  "ntfy": {
+    "host": "https://ntfy.sh",
+    "topic": "lu_bismarck72_alerts",
+    "token_env": "NTFY_TOKEN"
+  },
+  "smc": {
+    "endpoint": "https://api.smartcitizen.me",
+    "api_version": "v0",
+    "username_env": "SMARTCITIZEN_USERNAME",
+    "password_env": "SMARTCITIZEN_PASSWORD"
+  }
+}

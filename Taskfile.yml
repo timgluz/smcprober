@@ -2,10 +2,13 @@
 
 version: "3"
 
+dotenv: [".env"]
+
 vars:
   GREETING: Hello, World!
   DOCKER_BIN: nerdctl
   DOCKER_HOST: docker.io
+  SMC_NAMESPACE: smcprober
 
 tasks:
   default:
@@ -15,18 +18,48 @@ tasks:
   "release:helm":
     cmds:
       - helm package helm --app-version "{{.VERSION}}"
-      - helm push scmprober-*.tgz oci://registry-1.docker.io/tauho
-      - rm scmprober-*.tgz
+      - helm push smcprober-*.tgz oci://registry-1.docker.io/tauho
+      - rm smcprober-*.tgz
     vars:
       VERSION:
         sh: "cat VERSION"
+  "run":
+    cmds:
+      - go run main.go --config configs/config.json
+
+  "template:helm":
+    cmds:
+      - |
+        helm template dev ./helm --debug \
+          --set "imagePullSecrets[0].name"="smcprober-registry" \
+          --set-file=config=configs/config-k8s.json \
+          --set-file=secret.env=.env \
+          > smcprober.yaml
+      - kubectl apply -f smcprober.yaml --dry-run=server
+
+  "build:docker":
+    cmds:
+      - "{{.DOCKER_BIN}} build -t smcprober:latest -f Dockerfile ."
+
+  "run:docker":
+    cmds:
+      - "mkdir -p configs secrets"
+      - |
+        {{.DOCKER_BIN}} run --rm \
+          --volume {{.PWD}}/configs:/app/configs:ro \
+          --volume {{.PWD}}/secrets:/app/secrets:ro \
+          smcprober:latest \
+          -- /app/smcprober --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
+    deps:
+      - build:docker
 
   "release:docker":
     cmds:
-      - "{{.DOCKER_BIN}} tag scmprober:latest {{.DOCKER_HOST}}/tauho/scmprober:latest"
-      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
-      - "{{.DOCKER_BIN}} tag scmprober:latest {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
-      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/scmprober:{{.VERSION}}"
+      - task: "build:docker"
+      - "{{.DOCKER_BIN}} tag smcprober:latest {{.DOCKER_HOST}}/tauho/smcprober:latest"
+      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:latest"
+      - "{{.DOCKER_BIN}} tag smcprober:latest {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
     vars:
       VERSION:
         sh: "cat VERSION"
@@ -36,13 +69,9 @@ tasks:
       - task release:docker
       - task release:helm
 
-  "build:docker":
+  "deploy:credentials":
     cmds:
-      - "{{.DOCKER_BIN}} build -t scmprober:latest -f Dockerfile ."
-
-  "run:docker":
-    cmds:
-      - "mkdir -p config secrets"
-      - "{{.DOCKER_BIN}} run --rm --volume {{.PWD}}/config:/app/config:ro --volume {{.PWD}}/secrets:/app/secrets:ro scmprober:latest"
-    deps:
-      - build:docker
+      - kubectl create namespace {{.SMC_NAMESPACE}} --dry-run=server -o yaml | kubectl apply -f -
+      - "kubectl create secret docker-registry smcprober-registry -n {{.SMC_NAMESPACE}} --docker-username={{.DOCKER_USERNAME}} --docker-password={{.DOCKER_PASSWORD}} --docker-server={{.DOCKER_HOST}}"
+    requires:
+      vars: [DOCKER_USERNAME, DOCKER_PASSWORD]

@@ -8,11 +8,9 @@ import (
 	"log/slog"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
-
-var DefaultEndpoint = "https://api.smartcitizen.me"
-var DefaultAPIVersion = "v0"
 
 type OauthSession struct {
 	AccessToken  string `json:"access_token"`
@@ -24,22 +22,53 @@ type Provider interface {
 	Authenticate(ctx context.Context, credential UserCredential) (OauthSession, error)
 	HasSession() bool
 
+	// Ping checks if the endpoint is reachable
+	Ping(ctx context.Context) error
 	GetMe(ctx context.Context) (User, error)
 	GetDevice(ctx context.Context, deviceID int) (*DeviceDetail, error)
 }
 
 type HTTPProvider struct {
+	config  Config
 	session *OauthSession
 
 	client *http.Client
 	logger *slog.Logger
 }
 
-func NewHTTPProvider(client *http.Client, logger *slog.Logger) *HTTPProvider {
+func NewHTTPProvider(config Config, client *http.Client, logger *slog.Logger) *HTTPProvider {
 	return &HTTPProvider{
+		config: config,
 		client: client,
 		logger: logger,
 	}
+}
+
+func (p *HTTPProvider) Ping(ctx context.Context) error {
+	p.logger.Info("Pinging the SmartCitizen API endpoint")
+
+	pingEndpoint, err := url.JoinPath(p.config.Endpoint, p.config.APIVersion)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, pingEndpoint, nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := p.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("ping failed with status code: %d", resp.StatusCode)
+	}
+
+	p.logger.Info("Ping successful")
+	return nil
 }
 
 func (p *HTTPProvider) Authenticate(ctx context.Context, credential UserCredential) error {
@@ -51,19 +80,39 @@ func (p *HTTPProvider) Authenticate(ctx context.Context, credential UserCredenti
 		return fmt.Errorf("logger is not initialized")
 	}
 
+	if credential.Token != "" {
+		p.session = &OauthSession{
+			AccessToken: credential.Token,
+		}
+		p.logger.Info("Using provided token for authentication")
+		return nil
+	}
+
+	p.logger.Info("No token provided, proceeding with username/password authentication")
+	session, err := p.fetchOauthSession(ctx, credential)
+	if err != nil {
+		return err
+	}
+
+	p.session = session
+	p.logger.Info("User authenticated successfully")
+	return nil
+}
+
+func (p *HTTPProvider) fetchOauthSession(ctx context.Context, credential UserCredential) (*OauthSession, error) {
 	p.logger.Info("Authenticating user", "username", credential.Username)
 	authData := url.Values{}
 	authData.Set("username", credential.Username)
 	authData.Set("password", credential.Password)
 
-	authEndpoint, err := url.JoinPath(DefaultEndpoint, DefaultAPIVersion, "/sessions")
+	authEndpoint, err := url.JoinPath(p.config.Endpoint, p.config.APIVersion, "/sessions")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, authEndpoint, strings.NewReader(authData.Encode()))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// important: set content type to application/x-www-form-urlencoded
@@ -71,26 +120,25 @@ func (p *HTTPProvider) Authenticate(ctx context.Context, credential UserCredenti
 
 	resp, err := p.client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("authentication failed with status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("authentication failed with status code: %d", resp.StatusCode)
 	}
 
 	content, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	var session OauthSession
 	if err := json.Unmarshal(content, &session); err != nil {
-		return err
+		return nil, err
 	}
 
-	p.session = &session
-	return nil
+	return &session, nil
 }
 
 func (p *HTTPProvider) HasSession() bool {
@@ -102,7 +150,7 @@ func (p *HTTPProvider) GetMe(ctx context.Context) (User, error) {
 		return User{}, fmt.Errorf("no active session, please authenticate first")
 	}
 
-	meEndpoint, err := url.JoinPath(DefaultEndpoint, DefaultAPIVersion, "/me")
+	meEndpoint, err := url.JoinPath(p.config.Endpoint, p.config.APIVersion, "/me")
 	if err != nil {
 		return User{}, err
 	}
@@ -142,7 +190,11 @@ func (p *HTTPProvider) GetDevice(ctx context.Context, deviceID int) (*DeviceDeta
 		return nil, fmt.Errorf("no active session, please authenticate first")
 	}
 
-	deviceEndpoint, err := url.JoinPath(DefaultEndpoint, DefaultAPIVersion, fmt.Sprintf("/devices/%d", deviceID))
+	deviceEndpoint, err := url.JoinPath(p.config.Endpoint,
+		p.config.APIVersion,
+		"/devices",
+		strconv.Itoa(deviceID),
+	)
 	if err != nil {
 		return nil, err
 	}
