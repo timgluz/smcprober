@@ -63,6 +63,9 @@ func (p *HTTPProvider) Ping(ctx context.Context) error {
 	}
 
 	defer resp.Body.Close()
+	// Drain the response body to allow connection reuse
+	_, _ = io.Copy(io.Discard, resp.Body)
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping failed with status code: %d", resp.StatusCode)
 	}
@@ -85,6 +88,11 @@ func (p *HTTPProvider) Authenticate(ctx context.Context, credential UserCredenti
 			AccessToken: credential.Token,
 		}
 		p.logger.Info("Using provided token for authentication")
+		// Validate the token by calling GetMe
+		if _, err := p.GetMe(ctx); err != nil {
+			p.session = nil
+			return fmt.Errorf("provided token is invalid: %w", err)
+		}
 		return nil
 	}
 

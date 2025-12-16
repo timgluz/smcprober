@@ -22,10 +22,10 @@ type UserCredentialEnvProvider struct {
 	tokenEnvVar    string
 }
 
-func NewUserCredentialEnvProvider(usernameEnv, passworEnv, tokenEnv string) *UserCredentialEnvProvider {
+func NewUserCredentialEnvProvider(usernameEnv, passwordEnv, tokenEnv string) *UserCredentialEnvProvider {
 	return &UserCredentialEnvProvider{
 		usernameEnvVar: usernameEnv,
-		passwordEnvVar: passworEnv,
+		passwordEnvVar: passwordEnv,
 		tokenEnvVar:    tokenEnv,
 	}
 }
