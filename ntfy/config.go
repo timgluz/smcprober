@@ -2,7 +2,7 @@ package ntfy
 
 const (
 	DefaultNtfyEndpoint    = "https://ntfy.sh"
-	DefaultNtfyTopic       = "lu_bismarck72_alerts"
+	DefaultNtfyTopic       = "your-ntfy-topic"
 	DefaultNtfyTokenEnvVar = "NTFY_TOKEN"
 )
 

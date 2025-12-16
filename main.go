@@ -142,7 +142,7 @@ func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotif
 }
 
 func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
-	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv)
+	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
 		logger.Error("Failed to retrieve SmartCitizen credentials", "error", err)

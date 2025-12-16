@@ -22,25 +22,25 @@ type UserCredentialEnvProvider struct {
 	tokenEnvVar    string
 }
 
-func NewUserCredentialEnvProvider(usernameEnv, passworEnv string) *UserCredentialEnvProvider {
+func NewUserCredentialEnvProvider(usernameEnv, passworEnv, tokenEnv string) *UserCredentialEnvProvider {
 	return &UserCredentialEnvProvider{
 		usernameEnvVar: usernameEnv,
 		passwordEnvVar: passworEnv,
-		tokenEnvVar:    "SMARTCITIZEN_TOKEN",
+		tokenEnvVar:    tokenEnv,
 	}
 }
 
 func (p *UserCredentialEnvProvider) Retrieve(ctx context.Context) (UserCredential, error) {
 	username := os.Getenv(p.usernameEnvVar)
 	if username == "" {
-		return UserCredential{}, fmt.Errorf("environment variable SMARTCITIZEN_USERNAME must be set")
+		return UserCredential{}, fmt.Errorf("environment variable %s must be set", p.usernameEnvVar)
 	}
 
 	password := os.Getenv(p.passwordEnvVar)
 	token := os.Getenv(p.tokenEnvVar)
 
 	if password == "" && token == "" {
-		return UserCredential{}, fmt.Errorf("either environment variable SMARTCITIZEN_PASSWORD or SMARTCITIZEN_TOKEN must be set")
+		return UserCredential{}, fmt.Errorf("either environment variable %s or %s must be set", p.passwordEnvVar, p.tokenEnvVar)
 	}
 
 	return UserCredential{

@@ -49,7 +49,7 @@ tasks:
           --volume {{.PWD}}/configs:/app/configs:ro \
           --volume {{.PWD}}/secrets:/app/secrets:ro \
           smcprober:latest \
-          -- /app/smcprober --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
+          /app/smcprober --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
     deps:
       - build:docker
 
@@ -66,8 +66,8 @@ tasks:
 
   release:
     cmds:
-      - task release:docker
-      - task release:helm
+      - task: release:docker
+      - task: release:helm
 
   "deploy:namespace":
     cmds:
