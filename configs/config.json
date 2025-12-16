@@ -1,4 +1,6 @@
 {
+  "dotenv_path": ".env",
+  "log_level": "INFO",
   "battery_sensor_name": "Battery SCK",
   "ntfy": {
     "host": "https://ntfy.sh",

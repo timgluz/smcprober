@@ -1,0 +1,36 @@
+SmartCitizen Prober has been deployed!
+
+This is a CronJob-based monitoring service that checks SmartCitizen device
+battery levels periodically.
+
+1. Verify the CronJob was created:
+
+  kubectl get cronjob --namespace {{ .Release.Namespace }} {{ include "helm.name" . }}-cronjob
+
+2. Check the CronJob schedule and status:
+
+  kubectl describe cronjob --namespace {{ .Release.Namespace }} {{ include "helm.name" . }}-cronjob
+
+3. View recent and upcoming job executions:
+
+  kubectl get jobs --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }}
+
+4. View logs from the most recent job run:
+
+  export JOB_NAME=$(kubectl get jobs --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1].metadata.name}')
+  kubectl logs --namespace {{ .Release.Namespace }} job/$JOB_NAME
+
+5. Manually trigger a job run:
+
+  kubectl create job --namespace {{ .Release.Namespace }} --from=cronjob/{{ include "helm.name" . }}-cronjob {{ include "helm.name" . }}-manual-$(date +%s)
+
+6. Monitor job completion status:
+
+  kubectl get jobs --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} --watch
+
+Configuration:
+- Schedule: Every 3 hours at minute 0 (0 */3 * * *)
+- Config: Mounted from ConfigMap 'smcprober-config'
+- Secrets: Mounted from Secret 'smcprober-secret'
+
+For more information, visit the project repository.

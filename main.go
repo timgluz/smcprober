@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/joho/godotenv"
+
 	"github.com/timgluz/smcprober/alert"
 	"github.com/timgluz/smcprober/httpclient"
 	"github.com/timgluz/smcprober/ntfy"
@@ -15,10 +17,7 @@ import (
 )
 
 const (
-	DefaultNtfyEndpoint    = "https://ntfy.sh"
-	DefaultNtfyTopic       = "lu_bismarck72_alerts"
-	DefaultNtfyTokenEnvVar = "NTFY_TOKEN"
-
+	DefaultConfigPath        = "configs/config.json"
 	DefaultBatterySensorName = "Battery SCK"
 
 	DeviceStateMetricName = "Device State"
@@ -27,65 +26,37 @@ const (
 type AppConfig struct {
 	BatterySensorName string `json:"battery_sensor_name"`
 
-	Ntfy NtfyConfig         `json:"ntfy"`
-	Smc  SmartCitizenConfig `json:"smartcitizen"`
-}
+	LogLevel   string `json:"log_level"`
+	DotEnvPath string `json:"dotenv_path"`
 
-type NtfyConfig struct {
-	Endpoint string `json:"endpoint"`
-	Topic    string `json:"topic"`
-	TokenEnv string `json:"token_env"`
-}
-
-func DefaultNtfyConfig() NtfyConfig {
-	return NtfyConfig{
-		Endpoint: DefaultNtfyEndpoint,
-		Topic:    DefaultNtfyTopic,
-		TokenEnv: DefaultNtfyTokenEnvVar,
-	}
-}
-
-func (c *NtfyConfig) ApplyDefaults() {
-	if c.Endpoint == "" {
-		c.Endpoint = DefaultNtfyEndpoint
-	}
-
-	if c.Topic == "" {
-		c.Topic = DefaultNtfyTopic
-	}
-
-	if c.TokenEnv == "" {
-		c.TokenEnv = DefaultNtfyTokenEnvVar
-	}
-}
-
-type SmartCitizenConfig struct {
-	Endpoint   string `json:"endpoint"`
-	APIVersion string `json:"api_version"`
-
-	UsernameEnv string `json:"username_env"`
-	PasswordEnv string `json:"password_env"`
-}
-
-func (c *SmartCitizenConfig) ApplyDefaults() {
-	if c.UsernameEnv == "" {
-		c.UsernameEnv = "SMARTCITIZEN_USERNAME"
-	}
-
-	if c.PasswordEnv == "" {
-		c.PasswordEnv = "SMARTCITIZEN_PASSWORD"
-	}
+	Ntfy ntfy.Config         `json:"ntfy"`
+	Smc  smartcitizen.Config `json:"smartcitizen"`
 }
 
 func main() {
-	configPath := "config.json"
+	var configPath string
+	var dotEnvPath string
 
-	flag.StringVar(&configPath, "config", configPath, "Path to configuration file")
+	flag.StringVar(&configPath, "config", DefaultConfigPath, "Path to configuration file")
+	flag.StringVar(&dotEnvPath, "dotenv", "", "Path to .env file (overrides config file setting)")
 	flag.Parse()
 
 	appConfig, err := loadConfigFromJSONFile(configPath)
 	if err != nil {
-		panic(err)
+		fmt.Println("Error loading config:", err)
+		os.Exit(1)
+	}
+
+	if dotEnvPath != "" {
+		appConfig.DotEnvPath = dotEnvPath
+	}
+
+	if appConfig.DotEnvPath != "" {
+		fmt.Println("Loading .env file from:", appConfig.DotEnvPath)
+		if err := godotenv.Load(appConfig.DotEnvPath); err != nil {
+			fmt.Println("Error loading .env file:", err)
+			os.Exit(1)
+		}
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -93,6 +64,15 @@ func main() {
 	}))
 
 	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
+	if err != nil {
+		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
+		panic(err)
+	}
+
+	if err := smcProvider.Ping(context.Background()); err != nil {
+		logger.Error("Failed to ping SmartCitizen API", "error", err)
+		os.Exit(1)
+	}
 
 	user, err := smcProvider.GetMe(context.Background())
 	if err != nil {
@@ -101,7 +81,6 @@ func main() {
 	}
 
 	logger.Info("Authenticated user", "userID", user.ID, "username", user.Username)
-
 	notifier, err := initNtfyNotifier(appConfig, logger)
 	if err != nil {
 		logger.Error("Failed to initialize ntfy notifier", "error", err)
@@ -163,14 +142,17 @@ func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotif
 }
 
 func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
-	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv)
+	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
 		logger.Error("Failed to retrieve SmartCitizen credentials", "error", err)
 		panic(err)
 	}
 
-	smcProvider := smartcitizen.NewHTTPProvider(httpclient.NewDefaultHTTPClient(), logger)
+	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
+		httpclient.NewDefaultHTTPClient(),
+		logger,
+	)
 
 	if err := smcProvider.Authenticate(context.Background(), credentials); err != nil {
 		logger.Error("Failed to authenticate with SmartCitizen API", "error", err)
