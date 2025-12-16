@@ -10,7 +10,7 @@ metadata:
     {{- end }}
 
 spec:
-  schedule: "* */3 * * *"
+  schedule: "0 */3 * * *"
   jobTemplate:
     spec:
       template:

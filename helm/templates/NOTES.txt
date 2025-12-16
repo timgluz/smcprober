@@ -29,7 +29,7 @@ battery levels periodically.
   kubectl get jobs --namespace {{ .Release.Namespace }} -l app.kubernetes.io/instance={{ .Release.Name }} --watch
 
 Configuration:
-- Schedule: Every 3 hours (*/3)
+- Schedule: Every 3 hours at minute 0 (0 */3 * * *)
 - Config: Mounted from ConfigMap 'smcprober-config'
 - Secrets: Mounted from Secret 'smcprober-secret'
 
