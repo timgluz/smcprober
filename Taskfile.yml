@@ -69,9 +69,17 @@ tasks:
       - task release:docker
       - task release:helm
 
-  "deploy:credentials":
+  "deploy:namespace":
     cmds:
       - kubectl create namespace {{.SMC_NAMESPACE}} --dry-run=server -o yaml | kubectl apply -f -
-      - "kubectl create secret docker-registry smcprober-registry -n {{.SMC_NAMESPACE}} --docker-username={{.DOCKER_USERNAME}} --docker-password={{.DOCKER_PASSWORD}} --docker-server={{.DOCKER_HOST}}"
+
+  "deploy:credentials":
+    cmds:
+      - echo "Creating Docker registry secret in namespace {{.SMC_NAMESPACE}}"
+      - |
+        kubectl create secret docker-registry smcprober-registry -n {{.SMC_NAMESPACE}} \
+          --docker-username={{.DOCKER_USERNAME}} \
+          --docker-password={{.DOCKER_PASSWORD}} \
+          --docker-server={{.DOCKER_HOST}}
     requires:
-      vars: [DOCKER_USERNAME, DOCKER_PASSWORD]
+      vars: [DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_HOST]
