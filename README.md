@@ -1,6 +1,7 @@
 # SmartCitizen Prober
 
-SmartCitizen Prober is a small service to check the status of SmartCitizen devices and report their connectivity and data status.
+SmartCitizen Prober is a small service to check the status of
+SmartCitizen devices and report their connectivity and data status.
 
 ## Features
 
@@ -11,20 +12,27 @@ SmartCitizen Prober is a small service to check the status of SmartCitizen devic
 ### Prerequisites
 
 - [Go 1.x](https://golang.org/doc/install) (for local development)
-- [Task](https://taskfile.dev) - Task runner (install via `brew install go-task/tap/go-task` or see [installation guide](https://taskfile.dev/installation/))
-- [Docker](https://docs.docker.com/get-docker/) or [nerdctl](https://github.com/containerd/nerdctl) (for containerized deployment)
+- [Task](https://taskfile.dev) - Task runner (install via
+  `brew install go-task/tap/go-task` or see
+  [installation guide](https://taskfile.dev/installation/))
+- [Docker](https://docs.docker.com/get-docker/) or
+  [nerdctl](https://github.com/containerd/nerdctl)
+  (for containerized deployment)
 - [Helm](https://helm.sh/docs/intro/install/) (for Kubernetes deployment)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/) (for Kubernetes deployment)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+  (for Kubernetes deployment)
 
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone <repository-url>
 cd smcprober
 ```
 
-2. Install Go dependencies:
+1. Install Go dependencies:
+
 ```bash
 go mod download
 ```
@@ -32,13 +40,15 @@ go mod download
 ### Configuration
 
 1. Create a `.env` file in the project root with your credentials:
+
 ```bash
 SMARTCITIZEN_USERNAME="your-email@example.com"
 SMARTCITIZEN_TOKEN="your-smartcitizen-api-token"
 NTFY_TOKEN="your-ntfy-token"
 ```
 
-2. Configure the application settings in `configs/config.json`:
+1. Configure the application settings in `configs/config.json`:
+
 ```json
 {
   "dotenv_path": ".env",
@@ -63,6 +73,7 @@ NTFY_TOKEN="your-ntfy-token"
 #### Run Locally
 
 Run the application directly with Go:
+
 ```bash
 task run
 ```
@@ -72,11 +83,13 @@ This executes: `go run main.go --config configs/config.json`
 #### Run with Docker
 
 Build and run the application in a container:
+
 ```bash
 task run:docker
 ```
 
 Or manually:
+
 ```bash
 task build:docker
 ```
@@ -95,6 +108,7 @@ Available Task commands:
 - `task deploy:credentials` - Deploy credentials to Kubernetes
 
 View all available tasks:
+
 ```bash
 task --list
 ```
@@ -103,17 +117,30 @@ task --list
 
 #### Kubernetes with Helm
 
-1. Deploy credentials (requires `DOCKER_USERNAME` and `DOCKER_PASSWORD` environment variables):
+1. Create the namespace:
+
+```bash
+kubectl create namespace smcprober
+```
+
+1. Deploy credentials (requires `DOCKER_USERNAME` and `DOCKER_PASSWORD`
+   environment variables):
+
 ```bash
 DOCKER_USERNAME=your-username DOCKER_PASSWORD=your-password task deploy:credentials
 ```
 
-2. Template and preview the Helm deployment:
+Note: The `deploy:credentials` task also creates the namespace if it
+doesn't exist.
+
+1. Template and preview the Helm deployment:
+
 ```bash
 task template:helm
 ```
 
-3. Deploy using Helm:
+1. Deploy using Helm:
+
 ```bash
 helm install smcprober ./helm \
   --set "imagePullSecrets[0].name"="smcprober-registry" \
@@ -124,8 +151,10 @@ helm install smcprober ./helm \
 #### Release
 
 To release a new version:
+
 ```bash
 task release
 ```
 
-This will build and push both the Docker image and Helm chart. The version is read from the `VERSION` file.
+This will build and push both the Docker image and Helm chart.
+The version is read from the `VERSION` file.
