@@ -23,9 +23,21 @@ tasks:
     vars:
       VERSION:
         sh: "cat VERSION"
-  "run":
+
+  "run:exporter":
     cmds:
-      - go run main.go --config configs/config.json
+      - "echo Starting SmartCitizen Exporter..."
+      - "go run cmd/smcexporter/main.go --config configs/config.json --dotenv .env"
+
+  "run:job":
+    cmds:
+      - echo "Trigger ProbeJob"
+      - go run cmd/smcjob/main.go --config configs/config.json --dotenv .env
+
+  "run:downloader":
+    cmds:
+      - echo "Fetching data from SmartCitizen API..."
+      - go run cmd/smcdownload/main.go --config configs/config.json --dotenv .env
 
   "template:helm":
     cmds:

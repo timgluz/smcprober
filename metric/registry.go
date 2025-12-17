@@ -1,33 +1,94 @@
 package metric
 
 import (
+	"log/slog"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 // Registry holds all metrics in maps
+// and provides methods to get or create them from sensor data using converters
 type Registry struct {
 	namespace string
+	mu        sync.RWMutex
+
+	converters []Converter
 
 	gauges      map[string]prometheus.Gauge
 	gaugeVecs   map[string]*prometheus.GaugeVec
 	counters    map[string]prometheus.Counter
 	counterVecs map[string]*prometheus.CounterVec
 	histograms  map[string]prometheus.Histogram
-	mu          sync.RWMutex
+
+	logger *slog.Logger
 }
 
 // NewRegistry creates a new metric registry
-func NewRegistry(namespace string) *Registry {
+func NewRegistry(namespace string, logger *slog.Logger) *Registry {
 	return &Registry{
 		namespace:   namespace,
+		converters:  make([]Converter, 0),
 		gauges:      make(map[string]prometheus.Gauge),
 		gaugeVecs:   make(map[string]*prometheus.GaugeVec),
 		counters:    make(map[string]prometheus.Counter),
 		counterVecs: make(map[string]*prometheus.CounterVec),
 		histograms:  make(map[string]prometheus.Histogram),
+		logger:      logger,
 	}
+}
+
+func (r *Registry) AddConverters(converters ...Converter) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.converters = append(r.converters, converters...)
+}
+
+// Convert converts sensor data using registered converters and registers the resulting metric
+func (r *Registry) ConvertAndRegister(name string, data any) error {
+	converters := r.getMatchingConverters(name)
+	if len(converters) == 0 {
+		r.logger.Warn("No converters found that match the given name", "name", name)
+		return nil
+	}
+
+	for _, converter := range converters {
+		metric, err := converter.Convert(data)
+		if err != nil {
+			return err
+		}
+
+		if err := prometheus.Register(metric); err != nil {
+			// If the metric is already registered, unregister the existing one and register the new one
+			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				prometheus.Unregister(are.ExistingCollector)
+				prometheus.MustRegister(metric)
+			} else {
+				r.logger.Error("Failed to register metric",
+					"converter", converter.Name(), "data", data, "error", err,
+				)
+
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Registry) getMatchingConverters(name string) []Converter {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	matched := make([]Converter, 0)
+	for _, converter := range r.converters {
+		if converter.Match(name) {
+			matched = append(matched, converter)
+		}
+	}
+
+	return matched
 }
 
 // GetOrCreateGauge gets or creates a gauge metric

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -25,10 +24,22 @@ const (
 )
 
 type AppConfig struct {
-	LogLevel   string `json:"log_level"`
-	DotEnvPath string `json:"dotenv_path"`
+	ScrapeInterval int    `json:"scrape_interval"`
+	LogLevel       string `json:"log_level"`
+	DotEnvPath     string `json:"dotenv_path"`
 
 	Smc smartcitizen.Config `json:"smartcitizen"`
+}
+
+func (c *AppConfig) ApplyDefaults() {
+	if c.ScrapeInterval <= 0 {
+		c.ScrapeInterval = 30 // Default to 30 seconds
+	}
+	c.Smc.ApplyDefaults()
+}
+
+func (c *AppConfig) GetScrapeIntervalDuration() time.Duration {
+	return time.Duration(c.ScrapeInterval) * time.Second
 }
 
 type Result struct {
@@ -82,7 +93,7 @@ func main() {
 	exporter := smartcitizen.NewAPIExporter(appConfig.Smc, smcProvider, logger)
 
 	// Start background updater
-	go exporter.Start(15 * time.Second)
+	go exporter.Start(appConfig.GetScrapeIntervalDuration())
 
 	// HTTP handlers
 	http.Handle("/metrics", promhttp.Handler())
@@ -144,22 +155,7 @@ func loadConfigFromJSONFile(path string) (AppConfig, error) {
 		return config, err
 	}
 
-	config.Smc.ApplyDefaults()
+	config.ApplyDefaults()
 
 	return config, nil
-}
-
-func saveFile(path string, reader io.Reader) error {
-	file, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	_, err = io.Copy(file, reader)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
