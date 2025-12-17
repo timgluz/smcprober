@@ -12,4 +12,4 @@ FROM gcr.io/distroless/static:nonroot
 
 WORKDIR /app
 COPY --from=builder /go/dist/* /app/
-CMD ["/app/smcjob", "--config", "/app/configs/config.json"]
+CMD ["/app/smcexporter", "--config", "/app/configs/config.json"]
