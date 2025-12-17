@@ -21,20 +21,24 @@ type Registry struct {
 	counterVecs map[string]*prometheus.CounterVec
 	histograms  map[string]prometheus.Histogram
 
+	// Track registered collectors to avoid re-registration
+	registeredCollectors map[prometheus.Collector]bool
+
 	logger *slog.Logger
 }
 
 // NewRegistry creates a new metric registry
 func NewRegistry(namespace string, logger *slog.Logger) *Registry {
 	return &Registry{
-		namespace:   namespace,
-		converters:  make([]Converter, 0),
-		gauges:      make(map[string]prometheus.Gauge),
-		gaugeVecs:   make(map[string]*prometheus.GaugeVec),
-		counters:    make(map[string]prometheus.Counter),
-		counterVecs: make(map[string]*prometheus.CounterVec),
-		histograms:  make(map[string]prometheus.Histogram),
-		logger:      logger,
+		namespace:            namespace,
+		converters:           make([]Converter, 0),
+		gauges:               make(map[string]prometheus.Gauge),
+		gaugeVecs:            make(map[string]*prometheus.GaugeVec),
+		counters:             make(map[string]prometheus.Counter),
+		counterVecs:          make(map[string]*prometheus.CounterVec),
+		histograms:           make(map[string]prometheus.Histogram),
+		registeredCollectors: make(map[prometheus.Collector]bool),
+		logger:               logger,
 	}
 }
 
@@ -54,24 +58,32 @@ func (r *Registry) ConvertAndRegister(name string, data any) error {
 	}
 
 	for _, converter := range converters {
-		metric, err := converter.Convert(data)
+		collector, err := converter.Convert(data)
 		if err != nil {
 			return err
 		}
 
-		if err := prometheus.Register(metric); err != nil {
-			// If the metric is already registered, unregister the existing one and register the new one
-			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
-				prometheus.Unregister(are.ExistingCollector)
-				prometheus.MustRegister(metric)
-			} else {
-				r.logger.Error("Failed to register metric",
-					"converter", converter.Name(), "data", data, "error", err,
-				)
+		// Check if this collector has already been registered
+		r.mu.Lock()
+		alreadyRegistered := r.registeredCollectors[collector]
 
+		if !alreadyRegistered {
+			// First time seeing this collector, register it
+			if err := prometheus.Register(collector); err != nil {
+				r.mu.Unlock()
+				r.logger.Error("Failed to register metric",
+					"converter", converter.Name(), "error", err,
+				)
 				return err
 			}
+			// Mark as registered
+			r.registeredCollectors[collector] = true
+			r.logger.Debug("Registered new collector", "converter", converter.Name())
 		}
+		r.mu.Unlock()
+
+		// Note: The converter's Convert() method already updated the metric values
+		// via gauge.With(labels).Set(value), so we don't need to do anything else
 	}
 
 	return nil

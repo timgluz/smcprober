@@ -69,7 +69,7 @@ func main() {
 	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
 	if err != nil {
 		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
-		panic(err)
+		os.Exit(1)
 	}
 
 	if err := smcProvider.Ping(context.Background()); err != nil {
@@ -80,7 +80,7 @@ func main() {
 	user, err := smcProvider.GetMe(context.Background())
 	if err != nil {
 		logger.Error("Failed to get authenticated user", "error", err)
-		panic(err)
+		os.Exit(1)
 	}
 
 	result := Result{
@@ -92,7 +92,8 @@ func main() {
 		logger.Info("User device", "deviceID", device.ID, "name", device.Name, "state", device.State)
 		deviceDetail, err := smcProvider.GetDevice(context.Background(), device.ID)
 		if err != nil {
-			panic(err)
+			logger.Error("Failed to get device detail", "deviceID", device.ID, "error", err)
+			os.Exit(1)
 		}
 
 		if deviceDetail == nil {
@@ -127,7 +128,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
 		logger.Error("Failed to retrieve SmartCitizen credentials", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("failed to retrieve SmartCitizen credentials: %w", err)
 	}
 
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
@@ -137,7 +138,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 	if err := smcProvider.Authenticate(context.Background(), credentials); err != nil {
 		logger.Error("Failed to authenticate with SmartCitizen API", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("failed to authenticate with SmartCitizen API: %w", err)
 	}
 
 	return smcProvider, nil

@@ -8,6 +8,8 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -82,7 +84,7 @@ func main() {
 	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
 	if err != nil {
 		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
-		panic(err)
+		os.Exit(1)
 	}
 
 	if err := smcProvider.Ping(context.Background()); err != nil {
@@ -92,18 +94,23 @@ func main() {
 
 	exporter := smartcitizen.NewAPIExporter(appConfig.Smc, smcProvider, logger)
 
-	// Start background updater
-	go exporter.Start(appConfig.GetScrapeIntervalDuration())
+	// Create context that can be cancelled
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Start background updater with cancellable context
+	go exporter.Start(ctx, appConfig.GetScrapeIntervalDuration())
 
 	// HTTP handlers
-	http.Handle("/metrics", promhttp.Handler())
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 			<head><title>SmartCitizen Exporter</title></head>
 			<body>
@@ -114,11 +121,49 @@ func main() {
 			</html>`))
 	})
 
-	logger.Info("Starting exporter", "port", port)
-	if err := http.ListenAndServe(":"+port, nil); err != nil {
-		logger.Error("Error starting server", "error", err)
+	// Create HTTP server
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: mux,
 	}
 
+	// Channel to listen for errors from the server
+	serverErrors := make(chan error, 1)
+
+	// Start HTTP server in a goroutine
+	go func() {
+		logger.Info("Starting HTTP server", "port", port)
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	// Channel to listen for interrupt signals
+	shutdown := make(chan os.Signal, 1)
+	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
+
+	// Block until we receive a signal or server error
+	select {
+	case err := <-serverErrors:
+		logger.Error("Error starting server", "error", err)
+		os.Exit(1)
+	case sig := <-shutdown:
+		logger.Info("Received shutdown signal", "signal", sig)
+
+		// Cancel the context to stop background updater
+		cancel()
+
+		// Give outstanding operations 30 seconds to complete
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer shutdownCancel()
+
+		// Gracefully shutdown the HTTP server
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			logger.Error("Error during server shutdown", "error", err)
+			server.Close()
+			os.Exit(1)
+		}
+
+		logger.Info("Server stopped gracefully")
+	}
 }
 
 func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
@@ -126,7 +171,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
 		logger.Error("Failed to retrieve SmartCitizen credentials", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("failed to retrieve SmartCitizen credentials: %w", err)
 	}
 
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
@@ -136,7 +181,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 	if err := smcProvider.Authenticate(context.Background(), credentials); err != nil {
 		logger.Error("Failed to authenticate with SmartCitizen API", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("failed to authenticate with SmartCitizen API: %w", err)
 	}
 
 	return smcProvider, nil

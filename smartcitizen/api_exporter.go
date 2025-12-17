@@ -2,6 +2,7 @@ package smartcitizen
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -35,12 +36,10 @@ func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIE
 }
 
 func (e *APIExporter) fetchAPIData(ctx context.Context) (*UserDeviceCollection, error) {
-	defer ctx.Done()
-
 	user, err := e.provider.GetMe(ctx)
 	if err != nil {
 		e.logger.Error("Failed to get authenticated user", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("failed to get authenticated user: %w", err)
 	}
 
 	result := UserDeviceCollection{
@@ -52,7 +51,8 @@ func (e *APIExporter) fetchAPIData(ctx context.Context) (*UserDeviceCollection, 
 		e.logger.Info("User device", "deviceID", device.ID, "name", device.Name, "state", device.State)
 		deviceDetail, err := e.provider.GetDevice(ctx, device.ID)
 		if err != nil {
-			panic(err)
+			e.logger.Error("Failed to get device detail", "deviceID", device.ID, "error", err)
+			return nil, fmt.Errorf("failed to get device %d: %w", device.ID, err)
 		}
 
 		if deviceDetail == nil {
@@ -71,8 +71,6 @@ func (e *APIExporter) fetchAPIData(ctx context.Context) (*UserDeviceCollection, 
 }
 
 func (e *APIExporter) updateMetrics(ctx context.Context) {
-	defer ctx.Done()
-
 	e.logger.Info("Updating metrics from SmartCitizen API")
 	// Track requests
 	reqCounter := e.registry.GetOrCreateCounter(
@@ -128,7 +126,7 @@ func (e *APIExporter) processAPIData(data *UserDeviceCollection) {
 	}
 }
 
-func (e *APIExporter) Start(interval time.Duration) {
+func (e *APIExporter) Start(ctx context.Context, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
@@ -137,11 +135,18 @@ func (e *APIExporter) Start(interval time.Duration) {
 		return
 	}
 
-	// TODO: use context with cancellation,
-	e.updateMetrics(context.Background())
-	for range ticker.C {
-		e.updateMetrics(context.Background())
-		e.logger.Info("Metrics updated, will update again after interval", "interval", interval)
+	// Update metrics immediately on start
+	e.updateMetrics(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			e.logger.Info("Stopping metrics updater", "reason", ctx.Err())
+			return
+		case <-ticker.C:
+			e.updateMetrics(ctx)
+			e.logger.Info("Metrics updated, will update again after interval", "interval", interval)
+		}
 	}
 }
 
