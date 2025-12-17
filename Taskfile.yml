@@ -46,6 +46,7 @@ tasks:
           --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=config=configs/config-k8s.json \
           --set-file=secret.env=.env \
+          --set serviceMonitor.enabled=true
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
 
@@ -60,8 +61,9 @@ tasks:
         {{.DOCKER_BIN}} run --rm \
           --volume {{.PWD}}/configs:/app/configs:ro \
           --volume {{.PWD}}/secrets:/app/secrets:ro \
+          -p 8080:8080 \
           smcprober:latest \
-          /app/smcprober --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
+          /app/smcexporter --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
     deps:
       - build:docker
 
