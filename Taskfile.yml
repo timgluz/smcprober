@@ -100,3 +100,9 @@ tasks:
   "expose:prometheus":
     cmds:
       - "kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090"
+  "expose:grafana":
+    cmds:
+      - "kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80"
+  "expose:service":
+    cmds:
+      - "kubectl port-forward -n {{.SMC_NAMESPACE}} svc/dev-smcprober 8080:80"
