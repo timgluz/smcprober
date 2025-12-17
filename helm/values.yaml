@@ -82,7 +82,8 @@ serviceMonitor:
   # Honor labels from the scraped metrics
   honorLabels: true
   # Additional labels for ServiceMonitor
-  labels: {}
+  labels:
+    release: prometheus
   # Additional annotations for ServiceMonitor
   annotations: {}
   # Relabeling configs to apply to samples before ingestion

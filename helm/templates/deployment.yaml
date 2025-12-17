@@ -40,9 +40,9 @@ spec:
           command: ["/app/smcexporter"]
           args:
             - "--config"
-            - "/app/configs/config.yaml"
+            - "/app/configs/config.json"
             - "--dotenv"
-            - "/app/secrets/secret.env"
+            - "/app/secrets/env"
             - "--port"
             - "{{ .Values.service.containerPort }}"
           ports:

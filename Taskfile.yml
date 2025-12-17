@@ -46,7 +46,7 @@ tasks:
           --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=config=configs/config-k8s.json \
           --set-file=secret.env=.env \
-          --set serviceMonitor.enabled=true
+          --set serviceMonitor.enabled=true \
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
 
@@ -97,3 +97,6 @@ tasks:
           --docker-server={{.DOCKER_HOST}}
     requires:
       vars: [DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_HOST]
+  "expose:prometheus":
+    cmds:
+      - "kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090"
