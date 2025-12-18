@@ -155,7 +155,7 @@ func (e *APIExporter) convertDeviceDetailToMetrics(detail DeviceDetail) error {
 		e.logger.Error("Error converting device detail to metrics", "deviceID", detail.ID, "error", err)
 		errCounter := e.registry.GetOrCreateCounterVec(
 			"data_errors_total",
-			"total data processing errors",
+			"Total data processing errors",
 			[]string{"type"},
 		)
 
