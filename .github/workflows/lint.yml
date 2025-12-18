@@ -1,0 +1,19 @@
+name: Lint
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run markdownlint
+        uses: articulate/actions-markdownlint@v1
+        with:
+          config_file: .markdownlint.json
+          files: '**/*.md'
+          ignore: 'node_modules'
