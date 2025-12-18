@@ -19,7 +19,7 @@ type OauthSession struct {
 }
 
 type Provider interface {
-	Authenticate(ctx context.Context, credential UserCredential) (OauthSession, error)
+	Authenticate(ctx context.Context, credential UserCredential) error
 	HasSession() bool
 
 	// Ping checks if the endpoint is reachable

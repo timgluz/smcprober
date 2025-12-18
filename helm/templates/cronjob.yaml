@@ -24,7 +24,7 @@ spec:
                 {{- toYaml . | nindent 16 }}
               {{- end }}
               command:
-                - "/app/smcprober"
+                - "/app/smcjob"
               args:
                 - "--config"
                 - "/app/configs/config.json"

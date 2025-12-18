@@ -4,6 +4,7 @@
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 namespace: smcprober
+# it should stay one to avoid prometheus scraping conflicts
 replicaCount: 1
 
 # configuration of the application
@@ -64,6 +65,31 @@ service:
   type: ClusterIP
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
   port: 80
+  # Container port where the application listens
+  containerPort: 8080
+
+# ServiceMonitor configuration for Prometheus Operator
+# Requires prometheus-operator CRDs to be installed
+serviceMonitor:
+  # Enable ServiceMonitor creation
+  enabled: false
+  # Scrape interval for Prometheus
+  interval: 30s
+  # Scrape timeout
+  scrapeTimeout: 10s
+  # Metrics path
+  path: /metrics
+  # Honor labels from the scraped metrics
+  honorLabels: true
+  # Additional labels for ServiceMonitor
+  labels:
+    release: prometheus
+  # Additional annotations for ServiceMonitor
+  annotations: {}
+  # Relabeling configs to apply to samples before ingestion
+  relabelings: []
+  # MetricRelabelings to apply to samples before ingestion
+  metricRelabelings: []
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
@@ -133,14 +159,14 @@ resources: {}
   #   memory: 128Mi
 
 # This is to setup the liveness and readiness probes more information can be found here: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
-livenessProbe: {}
-  # httpGet:
-  #   path: /
-  #   port: http
-readinessProbe: {}
-  # httpGet:
-  #   path: /
-  #   port: http
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: http
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
 autoscaling:

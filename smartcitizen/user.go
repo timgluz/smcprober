@@ -17,3 +17,8 @@ type User struct {
 	Location Location     `json:"location"`
 	Devices  []UserDevice `json:"devices"`
 }
+
+type UserDeviceCollection struct {
+	User    User           `json:"user"`
+	Devices []DeviceDetail `json:"devices"`
+}
