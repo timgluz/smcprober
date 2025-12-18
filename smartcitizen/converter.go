@@ -2,10 +2,12 @@ package smartcitizen
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 
 	"github.com/gosimple/slug"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/timgluz/smcprober/metric"
 )
 
 var (
@@ -18,32 +20,22 @@ const (
 )
 
 type DeviceInfoConverter struct {
-	gauge *prometheus.GaugeVec
+	metricName string
 }
 
-func NewDeviceInfoConverter() *DeviceInfoConverter {
-	return &DeviceInfoConverter{
-		gauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "smartcitizen_device_info",
-				Help: "Static information about Smart Citizen devices",
-			},
-			[]string{"uuid", "name", "description"},
-		),
-	}
-}
-func (c *DeviceInfoConverter) Name() string {
-	return "DeviceInfoConverter"
+func NewDeviceInfoConverter(metricName string) *DeviceInfoConverter {
+
+	return &DeviceInfoConverter{metricName}
 }
 
 func (c *DeviceInfoConverter) Match(name string) bool {
 	return name == DeviceDetailType
 }
 
-func (c *DeviceInfoConverter) Convert(data any) (prometheus.Collector, error) {
+func (c *DeviceInfoConverter) Convert(registry metric.Registry, data any) error {
 	device, ok := data.(DeviceDetail)
 	if !ok {
-		return nil, ErrInvalidDataType
+		return fmt.Errorf("%w Invalid data type %v", ErrInvalidDataType, reflect.TypeOf(data))
 	}
 
 	labels := prometheus.Labels{
@@ -52,38 +44,38 @@ func (c *DeviceInfoConverter) Convert(data any) (prometheus.Collector, error) {
 		"description": device.Description,
 	}
 
-	c.gauge.With(labels).Set(1)
-	return c.gauge, nil
+	gauge := registry.GetOrCreateGaugeVec(
+		"smartcitizen_device_info",
+		"Static information about Smart Citizen devices",
+		[]string{"uuid", "name", "description"},
+	)
+
+	gauge.With(labels).Set(1)
+	return nil
 }
 
 type DeviceSensorConverter struct {
-	gauge *prometheus.GaugeVec
+	metricName string
 }
 
-func NewDeviceSensorConverter() *DeviceSensorConverter {
-	return &DeviceSensorConverter{
-		gauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "smartcitizen_sensor_state",
-				Help: "Current sensor value",
-			},
-			[]string{"id", "uuid", "name"},
-		),
-	}
-}
-
-func (c *DeviceSensorConverter) Name() string {
-	return "DeviceSensorConverter"
+func NewDeviceSensorConverter(metricName string) *DeviceSensorConverter {
+	return &DeviceSensorConverter{metricName}
 }
 
 func (c *DeviceSensorConverter) Match(name string) bool {
 	return name == DeviceSensorType
 }
-func (c *DeviceSensorConverter) Convert(data any) (prometheus.Collector, error) {
+func (c *DeviceSensorConverter) Convert(registry metric.Registry, data any) error {
 	sensor, ok := data.(DeviceSensor)
 	if !ok {
-		return nil, ErrInvalidDataType
+		return ErrInvalidDataType
 	}
+
+	gauge := registry.GetOrCreateGaugeVec(
+		c.metricName,
+		"Current sensor value",
+		[]string{"id", "uuid", "name"},
+	)
 
 	labels := prometheus.Labels{
 		"id":   strconv.Itoa(sensor.ID),
@@ -91,38 +83,26 @@ func (c *DeviceSensorConverter) Convert(data any) (prometheus.Collector, error) 
 		"name": slug.Make(sensor.Name),
 	}
 
-	c.gauge.With(labels).Set(sensor.Value)
-	return c.gauge, nil
+	gauge.With(labels).Set(sensor.Value)
+	return nil
 }
 
 type DeviceSensorInfoConverter struct {
-	gauge *prometheus.GaugeVec
+	metricName string
 }
 
-func NewDeviceSensorInfoConverter() *DeviceSensorInfoConverter {
-	return &DeviceSensorInfoConverter{
-		gauge: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: "smartcitizen_sensor_info",
-				Help: "Static information about Smart Citizen device sensors",
-			},
-			[]string{"id", "uuid", "name", "unit", "description"},
-		),
-	}
-}
-
-func (c *DeviceSensorInfoConverter) Name() string {
-	return "DeviceSensorInfoConverter"
+func NewDeviceSensorInfoConverter(metricName string) *DeviceSensorInfoConverter {
+	return &DeviceSensorInfoConverter{metricName}
 }
 
 func (c *DeviceSensorInfoConverter) Match(name string) bool {
 	return name == DeviceSensorType
 }
 
-func (c *DeviceSensorInfoConverter) Convert(data any) (prometheus.Collector, error) {
+func (c *DeviceSensorInfoConverter) Convert(registry metric.Registry, data any) error {
 	sensor, ok := data.(DeviceSensor)
 	if !ok {
-		return nil, ErrInvalidDataType
+		return ErrInvalidDataType
 	}
 
 	labels := prometheus.Labels{
@@ -133,6 +113,12 @@ func (c *DeviceSensorInfoConverter) Convert(data any) (prometheus.Collector, err
 		"description": sensor.Description,
 	}
 
-	c.gauge.With(labels).Set(1)
-	return c.gauge, nil
+	gauge := registry.GetOrCreateGaugeVec(
+		c.metricName,
+		"Static information about Smart Citizen device sensors",
+		[]string{"id", "uuid", "name", "unit", "description"},
+	)
+
+	gauge.With(labels).Set(1)
+	return nil
 }

@@ -7,109 +7,66 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// Registry holds all metrics in maps
+type Registry interface {
+	GetCollectorByName(name string) (prometheus.Collector, bool)
+	Register(name string, collector prometheus.Collector)
+
+	// Constructors / Getters
+	GetOrCreateGauge(name, help string) prometheus.Gauge
+	GetOrCreateGaugeVec(name, help string, labels []string) *prometheus.GaugeVec
+	GetOrCreateCounter(name, help string) prometheus.Counter
+	GetOrCreateCounterVec(name, help string, labels []string) *prometheus.CounterVec
+	GetOrCreateHistogram(name, help string, buckets []float64) prometheus.Histogram
+}
+
+// NamespacedRegistry holds all metrics in maps
 // and provides methods to get or create them from sensor data using converters
-type Registry struct {
+type NamespacedRegistry struct {
 	namespace string
 	mu        sync.RWMutex
 
-	converters []Converter
-
-	gauges      map[string]prometheus.Gauge
-	gaugeVecs   map[string]*prometheus.GaugeVec
-	counters    map[string]prometheus.Counter
-	counterVecs map[string]*prometheus.CounterVec
-	histograms  map[string]prometheus.Histogram
-
 	// Track registered collectors to avoid re-registration
-	registeredCollectors map[prometheus.Collector]bool
+	collectors map[string]prometheus.Collector
 
 	logger *slog.Logger
 }
 
-// NewRegistry creates a new metric registry
-func NewRegistry(namespace string, logger *slog.Logger) *Registry {
-	return &Registry{
-		namespace:            namespace,
-		converters:           make([]Converter, 0),
-		gauges:               make(map[string]prometheus.Gauge),
-		gaugeVecs:            make(map[string]*prometheus.GaugeVec),
-		counters:             make(map[string]prometheus.Counter),
-		counterVecs:          make(map[string]*prometheus.CounterVec),
-		histograms:           make(map[string]prometheus.Histogram),
-		registeredCollectors: make(map[prometheus.Collector]bool),
-		logger:               logger,
+// NewNamespacedRegistry creates a new metric registry
+func NewNamespacedRegistry(namespace string, logger *slog.Logger) *NamespacedRegistry {
+	return &NamespacedRegistry{
+		namespace:  namespace,
+		collectors: make(map[string]prometheus.Collector),
+		logger:     logger,
 	}
 }
 
-func (r *Registry) AddConverters(converters ...Converter) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	r.converters = append(r.converters, converters...)
-}
-
-// Convert converts sensor data using registered converters and registers the resulting metric
-func (r *Registry) ConvertAndRegister(name string, data any) error {
-	converters := r.getMatchingConverters(name)
-	if len(converters) == 0 {
-		r.logger.Warn("No converters found that match the given name", "name", name)
-		return nil
-	}
-
-	for _, converter := range converters {
-		collector, err := converter.Convert(data)
-		if err != nil {
-			return err
-		}
-
-		// Check if this collector has already been registered
-		r.mu.Lock()
-		alreadyRegistered := r.registeredCollectors[collector]
-
-		if !alreadyRegistered {
-			// First time seeing this collector, register it
-			if err := prometheus.Register(collector); err != nil {
-				r.mu.Unlock()
-				r.logger.Error("Failed to register metric",
-					"converter", converter.Name(), "error", err,
-				)
-				return err
-			}
-			// Mark as registered
-			r.registeredCollectors[collector] = true
-			r.logger.Debug("Registered new collector", "converter", converter.Name())
-		}
-		r.mu.Unlock()
-
-		// Note: The converter's Convert() method already updated the metric values
-		// via gauge.With(labels).Set(value), so we don't need to do anything else
-	}
-
-	return nil
-}
-
-func (r *Registry) getMatchingConverters(name string) []Converter {
+func (r *NamespacedRegistry) GetCollectorByName(name string) (prometheus.Collector, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	matched := make([]Converter, 0)
-	for _, converter := range r.converters {
-		if converter.Match(name) {
-			matched = append(matched, converter)
-		}
+	collector, exists := r.collectors[name]
+	return collector, exists
+}
+
+func (r *NamespacedRegistry) Register(name string, collector prometheus.Collector) {
+	if _, exists := r.GetCollectorByName(name); exists {
+		return
 	}
 
-	return matched
+	if err := prometheus.Register(collector); err != nil {
+		r.logger.Error("Failed to register collector", "name", name, "error", err)
+		return
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.collectors[name] = collector
 }
 
 // GetOrCreateGauge gets or creates a gauge metric
-func (r *Registry) GetOrCreateGauge(name, help string) prometheus.Gauge {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if gauge, exists := r.gauges[name]; exists {
-		return gauge
+func (r *NamespacedRegistry) GetOrCreateGauge(name, help string) prometheus.Gauge {
+	if gauge, exists := r.GetCollectorByName(name); exists {
+		return gauge.(prometheus.Gauge)
 	}
 
 	gauge := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -118,25 +75,31 @@ func (r *Registry) GetOrCreateGauge(name, help string) prometheus.Gauge {
 		Help:      help,
 	})
 
-	prometheus.MustRegister(gauge)
-	r.gauges[name] = gauge
+	r.Register(name, gauge)
 	return gauge
 }
 
-func (r *Registry) GetOrCreateInfo(name, help string) prometheus.Gauge {
-	gauge := r.GetOrCreateGauge(name, help)
-	gauge.Set(1)
+// GetOrCreateGaugeVec gets or creates a gauge vector metric
+func (r *NamespacedRegistry) GetOrCreateGaugeVec(name, help string, labels []string) *prometheus.GaugeVec {
 
-	return gauge
+	if gaugeVec, exists := r.GetCollectorByName(name); exists {
+		return gaugeVec.(*prometheus.GaugeVec)
+	}
+
+	gaugeVec := prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: r.namespace,
+		Name:      name,
+		Help:      help,
+	}, labels)
+
+	r.Register(name, gaugeVec)
+	return gaugeVec
 }
 
 // GetOrCreateCounter gets or creates a counter metric
-func (r *Registry) GetOrCreateCounter(name, help string) prometheus.Counter {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if counter, exists := r.counters[name]; exists {
-		return counter
+func (r *NamespacedRegistry) GetOrCreateCounter(name, help string) prometheus.Counter {
+	if counter, exists := r.GetCollectorByName(name); exists {
+		return counter.(prometheus.Counter)
 	}
 
 	counter := prometheus.NewCounter(prometheus.CounterOpts{
@@ -145,17 +108,13 @@ func (r *Registry) GetOrCreateCounter(name, help string) prometheus.Counter {
 		Help:      help,
 	})
 
-	prometheus.MustRegister(counter)
-	r.counters[name] = counter
+	r.Register(name, counter)
 	return counter
 }
 
-func (r *Registry) GetOrCreateCounterVec(name, help string, labels []string) *prometheus.CounterVec {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if counterVec, exists := r.counterVecs[name]; exists {
-		return counterVec
+func (r *NamespacedRegistry) GetOrCreateCounterVec(name, help string, labels []string) *prometheus.CounterVec {
+	if counterVec, exists := r.GetCollectorByName(name); exists {
+		return counterVec.(*prometheus.CounterVec)
 	}
 
 	counterVec := prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -164,18 +123,14 @@ func (r *Registry) GetOrCreateCounterVec(name, help string, labels []string) *pr
 		Help:      help,
 	}, labels)
 
-	prometheus.MustRegister(counterVec)
-	r.counterVecs[name] = counterVec
+	r.Register(name, counterVec)
 	return counterVec
 }
 
 // GetOrCreateHistogram gets or creates a histogram metric
-func (r *Registry) GetOrCreateHistogram(name, help string, buckets []float64) prometheus.Histogram {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if histogram, exists := r.histograms[name]; exists {
-		return histogram
+func (r *NamespacedRegistry) GetOrCreateHistogram(name, help string, buckets []float64) prometheus.Histogram {
+	if histogram, exists := r.GetCollectorByName(name); exists {
+		return histogram.(prometheus.Histogram)
 	}
 
 	histogram := prometheus.NewHistogram(prometheus.HistogramOpts{
@@ -185,7 +140,6 @@ func (r *Registry) GetOrCreateHistogram(name, help string, buckets []float64) pr
 		Buckets:   buckets,
 	})
 
-	prometheus.MustRegister(histogram)
-	r.histograms[name] = histogram
+	r.Register(name, histogram)
 	return histogram
 }

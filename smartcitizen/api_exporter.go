@@ -13,26 +13,29 @@ import (
 type APIExporter struct {
 	config Config
 
-	provider Provider
-	registry *metric.Registry
-	logger   *slog.Logger
+	provider  Provider
+	registry  metric.Registry
+	converter metric.Converter
+	logger    *slog.Logger
 }
 
 func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIExporter {
-	exporter := APIExporter{
-		config:   config,
-		provider: provider,
-		logger:   logger,
-		registry: metric.NewRegistry("smartcitizen", logger),
-	}
-
+	namespace := "smartcitizen"
+	registry := metric.NewNamespacedRegistry(namespace, logger)
 	// Register converters
-	exporter.registry.AddConverters(NewDeviceInfoConverter(),
-		NewDeviceSensorConverter(),
-		NewDeviceSensorInfoConverter(),
+	converter := metric.NewCombinedConverter()
+	converter.Add(NewDeviceInfoConverter("device_info"),
+		NewDeviceSensorConverter("sensor_state"),
+		NewDeviceSensorInfoConverter("sensor_info"),
 	)
 
-	return &exporter
+	return &APIExporter{
+		config:    config,
+		provider:  provider,
+		registry:  registry,
+		converter: converter,
+		logger:    logger,
+	}
 }
 
 func (e *APIExporter) fetchAPIData(ctx context.Context) (*UserDeviceCollection, error) {
@@ -111,15 +114,12 @@ func (e *APIExporter) processAPIData(data *UserDeviceCollection) {
 
 	// Map user device details to metrics
 	for _, device := range data.Devices {
-		if err := mapDeviceDetailToConvertersMapping(e.registry, device); err != nil {
+		if err := e.convertDeviceDetailToMetrics(device); err != nil {
 			e.logger.Error("Failed to map device detail to metrics", "error", err, "deviceID", device.ID)
 			continue
 		}
-	}
 
-	// Map device sensors to metrics
-	for _, device := range data.Devices {
-		if err := mapDeviceSensorsToMetrics(e.registry, device.Data.Sensors); err != nil {
+		if err := e.convertDeviceSensorsToMetrics(device.Data.Sensors); err != nil {
 			e.logger.Error("Failed to map device sensors to metrics", "error", err, "deviceID", device.ID)
 			continue
 		}
@@ -150,9 +150,10 @@ func (e *APIExporter) Start(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func mapDeviceDetailToConvertersMapping(registry *metric.Registry, detail DeviceDetail) error {
-	if err := registry.ConvertAndRegister(DeviceDetailType, detail); err != nil {
-		errCounter := registry.GetOrCreateCounterVec(
+func (e *APIExporter) convertDeviceDetailToMetrics(detail DeviceDetail) error {
+	if err := e.converter.Convert(e.registry, detail); err != nil {
+		e.logger.Error("Error converting device detail to metrics", "deviceID", detail.ID, "error", err)
+		errCounter := e.registry.GetOrCreateCounterVec(
 			"data_errors_total",
 			"total data processing errors",
 			[]string{"type"},
@@ -164,10 +165,11 @@ func mapDeviceDetailToConvertersMapping(registry *metric.Registry, detail Device
 	return nil
 }
 
-func mapDeviceSensorsToMetrics(registry *metric.Registry, sensors []DeviceSensor) error {
+func (e *APIExporter) convertDeviceSensorsToMetrics(sensors []DeviceSensor) error {
 	for _, sensor := range sensors {
-		if err := registry.ConvertAndRegister(DeviceSensorType, sensor); err != nil {
-			errCounter := registry.GetOrCreateCounterVec(
+		if err := e.converter.Convert(e.registry, sensor); err != nil {
+			e.logger.Error("Error converting sensor data to metrics", "sensorID", sensor.ID, "error", err)
+			errCounter := e.registry.GetOrCreateCounterVec(
 				"data_errors_total",
 				"total data processing errors",
 				[]string{"type"},
