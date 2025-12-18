@@ -65,19 +65,18 @@ jobs:
 
       - name: Run yamllint
         run: |
-          yamllint --format github --config-file .yamllint.yml . || true
+          yamllint --format github --config-file .yamllint.yml .
 
       - name: Run yamllint (strict)
         if: always()
         run: |
           echo "### YAML Linting Results" >> $GITHUB_STEP_SUMMARY
-          yamllint --format parsable --config-file .yamllint.yml . > yamllint-results.txt 2>&1 || true
-          if [ -s yamllint-results.txt ]; then
+          if yamllint --format parsable --config-file .yamllint.yml . 2>&1 | tee yamllint-results.txt; then
+            echo "✅ No YAML linting issues found!" >> $GITHUB_STEP_SUMMARY
+          else
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             cat yamllint-results.txt >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ No YAML linting issues found!" >> $GITHUB_STEP_SUMMARY
           fi
 
   markdownlint:
@@ -93,27 +92,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: '**/package-lock.json'
 
       - name: Install markdownlint-cli
         run: npm install -g markdownlint-cli
 
       - name: Run markdownlint
         run: |
-          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules || true
+          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules
 
       - name: Run markdownlint (detailed)
         if: always()
         run: |
           echo "### Markdown Linting Results" >> $GITHUB_STEP_SUMMARY
-          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules > markdownlint-results.txt 2>&1 || true
-          if [ -s markdownlint-results.txt ]; then
+          if markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules 2>&1 | tee markdownlint-results.txt; then
+            echo "✅ No Markdown linting issues found!" >> $GITHUB_STEP_SUMMARY
+          else
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
             cat markdownlint-results.txt >> $GITHUB_STEP_SUMMARY
             echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "✅ No Markdown linting issues found!" >> $GITHUB_STEP_SUMMARY
           fi
 
   lint-summary:
