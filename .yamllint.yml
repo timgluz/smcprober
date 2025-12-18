@@ -45,7 +45,6 @@ rules:
 
 # Ignore generated or third-party files
 ignore: |
-  .github/
   vendor/
   node_modules/
   helm/templates/

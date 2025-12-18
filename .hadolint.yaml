@@ -3,17 +3,17 @@
 
 # Ignore rules that are too strict or not applicable
 ignored:
-  # DL3006: Always tag the version of an image explicitly
-  # We're using specific tags already (golang:1.25, distroless/static:nonroot)
+# DL3006: Always tag the version of an image explicitly
+# We're using specific tags already (golang:1.25, distroless/static:nonroot)
 
-  # DL3008: Pin versions in apt get install
-  # Not applicable as we use distroless base image
+# DL3008: Pin versions in apt get install
+# Not applicable as we use distroless base image
 
-  # DL3018: Pin versions in apk add
-  # Not applicable as we use distroless base image
+# DL3018: Pin versions in apk add
+# Not applicable as we use distroless base image
 
-  # DL3059: Multiple consecutive RUN instructions
-  # We intentionally separate build steps for clarity
+# DL3059: Multiple consecutive RUN instructions
+# We intentionally separate build steps for clarity
 
 # Trust official images
 trustedRegistries:
