@@ -15,6 +15,13 @@ type InstrumentedTransport struct {
 
 // NewInstrumentedTransport creates a transport that records metrics
 func NewInstrumentedTransport(base http.RoundTripper, histogram *prometheus.HistogramVec) *InstrumentedTransport {
+	if base == nil {
+		panic("httpclient: base RoundTripper cannot be nil")
+	}
+	if histogram == nil {
+		panic("httpclient: histogram cannot be nil")
+	}
+
 	return &InstrumentedTransport{
 		base:      base,
 		histogram: histogram,

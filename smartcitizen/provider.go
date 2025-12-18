@@ -41,6 +41,16 @@ type HTTPProvider struct {
 }
 
 func NewHTTPProvider(config Config, client *http.Client, registry metric.Registry, logger *slog.Logger) *HTTPProvider {
+	// Ensure we have a non-nil HTTP client
+	if client == nil {
+		client = &http.Client{}
+	}
+
+	// Ensure we have a non-nil transport to wrap
+	if client.Transport == nil {
+		client.Transport = http.DefaultTransport
+	}
+
 	// Create histogram for request duration
 	histogram := registry.GetOrCreateHistogramVec(
 		"api_request_duration_seconds",
@@ -52,6 +62,9 @@ func NewHTTPProvider(config Config, client *http.Client, registry metric.Registr
 	// Wrap the client's transport with instrumentation
 	if transport, ok := client.Transport.(*http.Transport); ok {
 		client.Transport = httpclient.NewInstrumentedTransport(transport, histogram)
+	} else {
+		logger.Warn("HTTP transport is not *http.Transport; metrics instrumentation not applied",
+			"transport_type", fmt.Sprintf("%T", client.Transport))
 	}
 
 	return &HTTPProvider{
