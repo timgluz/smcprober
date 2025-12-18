@@ -18,12 +18,7 @@ import (
 	"github.com/timgluz/smcprober/smartcitizen"
 )
 
-const (
-	DefaultConfigPath        = "configs/config.json"
-	DefaultBatterySensorName = "Battery SCK"
-
-	DeviceStateMetricName = "Device State"
-)
+const DefaultConfigPath = "configs/config.json"
 
 type AppConfig struct {
 	ScrapeInterval int    `json:"scrape_interval"`
@@ -42,6 +37,21 @@ func (c *AppConfig) ApplyDefaults() {
 
 func (c *AppConfig) GetScrapeIntervalDuration() time.Duration {
 	return time.Duration(c.ScrapeInterval) * time.Second
+}
+
+func (c *AppConfig) LogLevelValue() slog.Level {
+	switch c.LogLevel {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 type Result struct {
@@ -78,7 +88,7 @@ func main() {
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: appConfig.LogLevelValue(),
 	}))
 
 	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
