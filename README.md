@@ -1,7 +1,24 @@
 # SmartCitizen Prober
 
-SmartCitizen Prober is a small service to check the status of
-SmartCitizen devices and report their connectivity and data status.
+SmartCitizen Prober is a small service for checking the status of
+SmartCitizen devices and report their connectivity and sensors' status.
+
+It's splitted into 3 different binaries based on use case:
+
+1. smcdownloader: Download data from SmartCitizen devices and store it
+   locally for further processing.
+
+2. smcjob: Tool that could be scheduled periodically to check device status
+   and send notifications if devices are down or not sending data.
+
+3. smcprober: Prometheus exporter to expose device metrics for monitoring.
+   It is designed to be deployed in Kubernetes using Helm and could be used
+   for advanced monitoring and alerting.
+
+## Status
+
+Project is in early development stage and developed as sideproject.
+Features and APIs may change without notice.
 
 ## Features
 
@@ -154,6 +171,7 @@ The Helm chart includes optional ServiceMonitor support for automatic metrics
 discovery by Prometheus Operator.
 
 **Prerequisites:**
+
 - [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator)
   installed in your cluster
 
@@ -174,12 +192,12 @@ You can customize the ServiceMonitor settings in your `values.yaml`:
 ```yaml
 serviceMonitor:
   enabled: true
-  interval: 30s        # Scrape interval
-  scrapeTimeout: 10s   # Scrape timeout
-  path: /metrics       # Metrics endpoint path
-  honorLabels: true    # Honor labels from scraped metrics
-  labels: {}           # Additional labels for ServiceMonitor
-  annotations: {}      # Additional annotations
+  interval: 30s # Scrape interval
+  scrapeTimeout: 10s # Scrape timeout
+  path: /metrics # Metrics endpoint path
+  honorLabels: true # Honor labels from scraped metrics
+  labels: {} # Additional labels for ServiceMonitor
+  annotations: {} # Additional annotations
 ```
 
 The application exposes Prometheus metrics at `/metrics` endpoint on port 8080.

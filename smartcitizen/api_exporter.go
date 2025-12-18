@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/timgluz/smcprober/metric"
 )
 
@@ -17,6 +18,9 @@ type APIExporter struct {
 	registry  metric.Registry
 	converter metric.Converter
 	logger    *slog.Logger
+
+	// Metrics
+	dataErrorCounter *prometheus.CounterVec
 }
 
 func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIExporter {
@@ -34,12 +38,20 @@ func NewAPIExporterWithRegistry(config Config, provider Provider, registry metri
 		NewDeviceSensorInfoConverter("sensor_info"),
 	)
 
+	// Create error counter once
+	dataErrorCounter := registry.GetOrCreateCounterVec(
+		"data_errors_total",
+		"Total data processing errors",
+		[]string{"type"},
+	)
+
 	return &APIExporter{
-		config:    config,
-		provider:  provider,
-		registry:  registry,
-		converter: converter,
-		logger:    logger,
+		config:           config,
+		provider:         provider,
+		registry:         registry,
+		converter:        converter,
+		logger:           logger,
+		dataErrorCounter: dataErrorCounter,
 	}
 }
 
@@ -158,13 +170,7 @@ func (e *APIExporter) Start(ctx context.Context, interval time.Duration) {
 func (e *APIExporter) convertDeviceDetailToMetrics(detail DeviceDetail) error {
 	if err := e.converter.Convert(e.registry, detail); err != nil {
 		e.logger.Error("Error converting device detail to metrics", "deviceID", detail.ID, "error", err)
-		errCounter := e.registry.GetOrCreateCounterVec(
-			"data_errors_total",
-			"Total data processing errors",
-			[]string{"type"},
-		)
-
-		errCounter.WithLabelValues("mapping_error").Inc()
+		e.dataErrorCounter.WithLabelValues("mapping_error").Inc()
 		return err
 	}
 	return nil
@@ -174,14 +180,7 @@ func (e *APIExporter) convertDeviceSensorsToMetrics(sensors []DeviceSensor) erro
 	for _, sensor := range sensors {
 		if err := e.converter.Convert(e.registry, sensor); err != nil {
 			e.logger.Error("Error converting sensor data to metrics", "sensorID", sensor.ID, "error", err)
-			errCounter := e.registry.GetOrCreateCounterVec(
-				"data_errors_total",
-				"Total data processing errors",
-				[]string{"type"},
-			)
-
-			errCounter.WithLabelValues("mapping_error").Inc()
-
+			e.dataErrorCounter.WithLabelValues("mapping_error").Inc()
 			return err
 		}
 	}

@@ -19,12 +19,7 @@ import (
 	"github.com/timgluz/smcprober/smartcitizen"
 )
 
-const (
-	DefaultConfigPath        = "configs/config.json"
-	DefaultBatterySensorName = "Battery SCK"
-
-	DeviceStateMetricName = "Device State"
-)
+const DefaultConfigPath = "configs/config.json"
 
 type AppConfig struct {
 	ScrapeInterval int    `json:"scrape_interval"`
@@ -43,6 +38,21 @@ func (c *AppConfig) ApplyDefaults() {
 
 func (c *AppConfig) GetScrapeIntervalDuration() time.Duration {
 	return time.Duration(c.ScrapeInterval) * time.Second
+}
+
+func (c *AppConfig) LogLevelValue() slog.Level {
+	switch c.LogLevel {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 type Result struct {
@@ -79,7 +89,7 @@ func main() {
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: appConfig.LogLevelValue(),
 	}))
 
 	// Create shared metric registry
@@ -112,23 +122,32 @@ func main() {
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			logger.Error("Failed to write /health response", "error", err)
+			return
+		}
 	})
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			logger.Error("Failed to write /healthz response", "error", err)
+			return
+		}
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		if _, err := w.Write([]byte(`<html>
 			<head><title>SmartCitizen Exporter</title></head>
 			<body>
 			<h1>Prometheus Exporter for SmartCitizen devices</h1>
 			<p><a href="/metrics">Metrics</a></p>
 			<p>Metrics are dynamically registered and updated</p>
 			</body>
-			</html>`))
+			</html>`)); err != nil {
+			logger.Error("Failed to write root (/) response", "error", err)
+			return
+		}
 	})
 
 	// Create HTTP server
