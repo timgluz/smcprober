@@ -107,23 +107,32 @@ func main() {
 
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			logger.Error("Failed to write /health response", "error", err)
+			return
+		}
 	})
 
 	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		if _, err := w.Write([]byte("OK")); err != nil {
+			logger.Error("Failed to write /healthz response", "error", err)
+			return
+		}
 	})
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		if _, err := w.Write([]byte(`<html>
 			<head><title>SmartCitizen Exporter</title></head>
 			<body>
 			<h1>Prometheus Exporter for SmartCitizen devices</h1>
 			<p><a href="/metrics">Metrics</a></p>
 			<p>Metrics are dynamically registered and updated</p>
 			</body>
-			</html>`))
+			</html>`)); err != nil {
+			logger.Error("Failed to write root (/) response", "error", err)
+			return
+		}
 	})
 
 	// Create HTTP server
