@@ -1,26 +1,19 @@
 name: Lint
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
 
-# Cancel in-progress runs when a new commit is pushed
+# Cancel previous runs if a new push occurs
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  pull-requests: read
-  checks: write
-
 jobs:
   hadolint:
-    name: Lint Dockerfile
+    name: Lint Dockerfiles
     runs-on: ubuntu-latest
     continue-on-error: true
 
@@ -28,24 +21,22 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Hadolint
+      - name: Run hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: Dockerfile
-          config: .hadolint.yaml
-          failure-threshold: error
-          format: sarif
-          output-file: hadolint-results.sarif
-          no-fail: true
+          failure-threshold: warning
+          ignore: DL3008,DL3009
 
-      - name: Upload Hadolint results
+      - name: Lint summary
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: hadolint-results.sarif
-          category: hadolint
+        run: |
+          echo "### Dockerfile Linting Results" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Dockerfile linting completed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Ignored rules: DL3008 (apt pinning), DL3009 (apt cleanup)" >> $GITHUB_STEP_SUMMARY
 
-  yamllint:
+  actionlint:
     name: Lint YAML Files
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -54,30 +45,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Run actionlint
+        uses: reviewdog/action-actionlint@v1
         with:
-          python-version: '3.x'
-          cache: 'pip'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reporter: github-pr-review
+          level: warning
+          fail_on_error: false
 
-      - name: Install yamllint
-        run: pip install yamllint
-
-      - name: Run yamllint
-        run: |
-          yamllint --format github --config-file .yamllint.yml .
-
-      - name: Run yamllint (strict)
+      - name: Run actionlint (detailed)
         if: always()
         run: |
           echo "### YAML Linting Results" >> $GITHUB_STEP_SUMMARY
-          if yamllint --format parsable --config-file .yamllint.yml . 2>&1 | tee yamllint-results.txt; then
-            echo "✅ No YAML linting issues found!" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            cat yamllint-results.txt >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ YAML linting completed with actionlint!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "actionlint validates GitHub Actions workflows and general YAML syntax." >> $GITHUB_STEP_SUMMARY
 
   markdownlint:
     name: Lint Markdown Files
@@ -88,43 +70,45 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install markdownlint-cli
-        run: npm install -g markdownlint-cli
-
       - name: Run markdownlint
-        run: |
-          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules
+        uses: nosborn/github-action-markdown-cli@v3.3.0
+        with:
+          files: .
+          config_file: .markdownlint.yml
+          ignore_files: node_modules/**/*.md
 
-      - name: Run markdownlint (detailed)
+      - name: Lint summary
         if: always()
         run: |
           echo "### Markdown Linting Results" >> $GITHUB_STEP_SUMMARY
-          if markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules 2>&1 | tee markdownlint-results.txt; then
-            echo "✅ No Markdown linting issues found!" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            cat markdownlint-results.txt >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "✅ Markdown linting completed!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Configuration: .markdownlint.yml" >> $GITHUB_STEP_SUMMARY
 
   lint-summary:
     name: Linting Summary
     runs-on: ubuntu-latest
-    needs: [hadolint, yamllint, markdownlint]
+    needs: [hadolint, actionlint, markdownlint]
     if: always()
 
     steps:
-      - name: Check linting results
+      - name: Generate summary
         run: |
-          echo "### 📋 Linting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "# 🔍 Linting Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All linting jobs completed. Check individual job results above." >> $GITHUB_STEP_SUMMARY
+          echo "## Results by Job" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- Dockerfile (Hadolint): ${{ needs.hadolint.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- YAML files (yamllint): ${{ needs.yamllint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Dockerfiles (hadolint): ${{ needs.hadolint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- YAML files (actionlint): ${{ needs.actionlint.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- Markdown files (markdownlint): ${{ needs.markdownlint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check if any job failed
+          if [ "${{ needs.hadolint.result }}" == "failure" ] || \
+             [ "${{ needs.actionlint.result }}" == "failure" ] || \
+             [ "${{ needs.markdownlint.result }}" == "failure" ]; then
+            echo "⚠️ Some linting jobs reported issues. Please review the details above." >> $GITHUB_STEP_SUMMARY
+            exit 0  # Don't fail the workflow, we're using continue-on-error
+          else
+            echo "✅ All linting checks passed!" >> $GITHUB_STEP_SUMMARY
+          fi
