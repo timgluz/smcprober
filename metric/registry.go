@@ -49,17 +49,21 @@ func (r *NamespacedRegistry) GetCollectorByName(name string) (prometheus.Collect
 }
 
 func (r *NamespacedRegistry) Register(name string, collector prometheus.Collector) {
-	if _, exists := r.GetCollectorByName(name); exists {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	// Check if already registered (while holding write lock)
+	if _, exists := r.collectors[name]; exists {
 		return
 	}
 
+	// Register with Prometheus
 	if err := prometheus.Register(collector); err != nil {
 		r.logger.Error("Failed to register collector", "name", name, "error", err)
 		return
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	// Add to internal map
 	r.collectors[name] = collector
 }
 
