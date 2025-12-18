@@ -5,8 +5,20 @@ import (
 	"sync"
 )
 
+// Converter defines the contract for types that can register metrics in a Registry
+// from arbitrary data values. Implementations typically inspect the type or name
+// of the provided data and, when applicable, populate the given Registry with
+// one or more metrics derived from that data.
 type Converter interface {
+	// Match reports whether this Converter is able to handle a metric or data
+	// source identified by the provided name. Callers use Match to determine
+	// which converter(s) should be invoked for a particular type or metric name.
 	Match(name string) bool
+
+	// Convert registers metrics in the supplied Registry based on the provided
+	// data value. It should only be called when Match has returned true for the
+	// corresponding type or name. Implementations must return a non-nil error
+	// if the conversion or registration fails; otherwise they should return nil.
 	Convert(Registry, any) error
 }
 
