@@ -44,14 +44,14 @@ func (t *InstrumentedTransport) RoundTrip(req *http.Request) (*http.Response, er
 	return resp, err
 }
 
-// statusCategory converts HTTP status code to category
+// statusCategory converts HTTP status code to human-friendly category
 func statusCategory(code int) string {
 	if code >= 200 && code < 300 {
-		return "2xx"
+		return "success"
 	} else if code >= 400 && code < 500 {
-		return "4xx"
+		return "client_error"
 	} else if code >= 500 {
-		return "5xx"
+		return "server_error"
 	}
-	return "other"
+	return "unknown"
 }
