@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 
 	"github.com/timgluz/smcprober/alert"
 	"github.com/timgluz/smcprober/httpclient"
+	"github.com/timgluz/smcprober/metric"
 	"github.com/timgluz/smcprober/ntfy"
 	"github.com/timgluz/smcprober/smartcitizen"
 )
@@ -63,7 +65,11 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
-	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
+	// Create shared metric registry
+	namespace := "smartcitizen"
+	registry := metric.NewNamespacedRegistry(namespace, logger)
+
+	smcProvider, err := initSmartCitizenProvider(appConfig, registry, logger)
 	if err != nil {
 		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
 		panic(err)
@@ -113,11 +119,17 @@ func main() {
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	var config AppConfig
-	file, err := os.Open(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
@@ -135,13 +147,15 @@ func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotif
 
 	if appConfig.Ntfy.TokenEnv != "" {
 		ntfyCredProvider := ntfy.NewTokenCredentialEnvProvider(appConfig.Ntfy.TokenEnv)
-		notifier.SetCredentialProvider(ntfyCredProvider)
+		if err := notifier.SetCredentialProvider(ntfyCredProvider); err != nil {
+			logger.Warn("Failed to set ntfy credential provider", "error", err)
+		}
 	}
 
 	return notifier, nil
 }
 
-func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
+func initSmartCitizenProvider(appConfig AppConfig, registry metric.Registry, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
 	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
@@ -151,6 +165,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
 		httpclient.NewDefaultHTTPClient(),
+		registry,
 		logger,
 	)
 

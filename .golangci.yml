@@ -1,0 +1,113 @@
+# golangci-lint configuration (v2)
+# See https://golangci-lint.run/usage/configuration/
+
+version: 2
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+
+linters:
+  enable:
+    # Default linters
+    - errcheck        # Check for unchecked errors
+    - govet           # Go vet
+    - ineffassign     # Detect ineffectual assignments
+    - staticcheck     # Static analysis (includes gosimple and stylecheck)
+    - unused          # Check for unused code
+
+    # Additional recommended linters
+    - misspell        # Spell checking
+    - gosec           # Security issues
+    - unconvert       # Unnecessary type conversions
+    - unparam         # Unused function parameters
+    - goconst         # Repeated strings that could be constants
+    - gocyclo         # Cyclomatic complexity
+    - dupl            # Duplicate code detection
+    - bodyclose       # HTTP response body close check
+    - noctx           # HTTP requests without context
+
+  disable:
+    - exhaustive      # Can be noisy for switch statements
+    - cyclop          # Duplicate of gocyclo with different thresholds
+    - funlen          # Can be too strict for some legitimate cases
+    - gocognit        # Similar to gocyclo
+    - revive          # Disabled to avoid noisy documentation comment warnings
+
+linters-settings:
+  errcheck:
+    # Check for common functions where errors are often ignored
+    check-type-assertions: true
+    check-blank: false
+
+  govet:
+    enable-all: true
+    disable:
+      - shadow  # Can be noisy
+
+  gosec:
+    # Security checks
+    excludes:
+      - G104  # Duplicate of errcheck
+
+  gocyclo:
+    # Cyclomatic complexity threshold
+    min-complexity: 15
+
+  dupl:
+    # Duplicate code threshold
+    threshold: 100
+
+  misspell:
+    locale: US
+
+  goconst:
+    # Minimum length of string constant
+    min-len: 3
+    # Minimum occurrences to trigger
+    min-occurrences: 3
+
+issues:
+  # Maximum issues count per linter
+  max-issues-per-linter: 0
+
+  # Maximum count of issues with the same text
+  max-same-issues: 0
+
+  # Exclude some linters from running on tests files
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - dupl
+        - gosec
+        - goconst
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+  # Independently of option `exclude` we use default exclude patterns
+  exclude-case-sensitive: false
+
+output:
+  # Colored output
+  format: colored-line-number
+
+  # Print lines of code with issue
+  print-issued-lines: true
+
+  # Print linter name in the end of issue text
+  print-linter-name: true
+
+  # Make issues output unique by line
+  uniq-by-line: true
+
+  # Sort results by: filepath, line and column
+  sort-results: true

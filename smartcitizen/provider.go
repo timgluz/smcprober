@@ -93,9 +93,13 @@ func (p *HTTPProvider) Ping(ctx context.Context) error {
 		return err
 	}
 
-	defer resp.Body.Close()
-	// Drain the response body to allow connection reuse
-	_, _ = io.Copy(io.Discard, resp.Body)
+	defer func() {
+		// Drain the response body to allow connection reuse
+		_, _ = io.Copy(io.Discard, resp.Body)
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			p.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("ping failed with status code: %d", resp.StatusCode)
@@ -161,7 +165,11 @@ func (p *HTTPProvider) fetchOauthSession(ctx context.Context, credential UserCre
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			p.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("authentication failed with status code: %d", resp.StatusCode)
@@ -206,7 +214,11 @@ func (p *HTTPProvider) GetMe(ctx context.Context) (User, error) {
 		return User{}, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			p.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return User{}, fmt.Errorf("failed to get user info with status code: %d", resp.StatusCode)
 	}
@@ -250,7 +262,11 @@ func (p *HTTPProvider) GetDevice(ctx context.Context, deviceID int) (*DeviceDeta
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			p.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("failed to get device info with status code: %d", resp.StatusCode)
 	}

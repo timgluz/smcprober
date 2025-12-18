@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 	"github.com/timgluz/smcprober/httpclient"
@@ -147,11 +148,17 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	var config AppConfig
-	file, err := os.Open(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
@@ -164,11 +171,17 @@ func loadConfigFromJSONFile(path string) (AppConfig, error) {
 }
 
 func saveFile(path string, reader io.Reader) error {
-	file, err := os.Create(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Create(cleanPath)
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close file: %v\n", closeErr)
+		}
+	}()
 
 	_, err = io.Copy(file, reader)
 	if err != nil {

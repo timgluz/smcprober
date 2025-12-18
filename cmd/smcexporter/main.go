@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -187,7 +188,9 @@ func main() {
 		// Gracefully shutdown the HTTP server
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			logger.Error("Error during server shutdown", "error", err)
-			server.Close()
+			if closeErr := server.Close(); closeErr != nil {
+				logger.Error("Error closing server", "error", closeErr)
+			}
 			os.Exit(1)
 		}
 
@@ -219,11 +222,17 @@ func initSmartCitizenProvider(appConfig AppConfig, registry *metric.NamespacedRe
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	var config AppConfig
-	file, err := os.Open(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
