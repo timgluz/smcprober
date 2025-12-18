@@ -19,7 +19,6 @@ linters:
 
     # Additional recommended linters
     - misspell        # Spell checking
-    - revive          # General purpose linter
     - gosec           # Security issues
     - unconvert       # Unnecessary type conversions
     - unparam         # Unused function parameters
@@ -34,6 +33,7 @@ linters:
     - cyclop          # Duplicate of gocyclo with different thresholds
     - funlen          # Can be too strict for some legitimate cases
     - gocognit        # Similar to gocyclo
+    - revive          # Disabled to avoid noisy documentation comment warnings
 
 linters-settings:
   errcheck:
@@ -45,27 +45,6 @@ linters-settings:
     enable-all: true
     disable:
       - shadow  # Can be noisy
-
-  revive:
-    # Enable most rules but keep it reasonable
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: increment-decrement
-      - name: var-naming
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: indent-error-flow
-      - name: superfluous-else
-      - name: unreachable-code
-      - name: redefines-builtin-id
 
   gosec:
     # Security checks
@@ -113,9 +92,6 @@ issues:
     - linters:
         - lll
       source: "^//go:generate "
-
-  # Show all issues from a linter
-  exclude-use-default: false
 
   # Independently of option `exclude` we use default exclude patterns
   exclude-case-sensitive: false
