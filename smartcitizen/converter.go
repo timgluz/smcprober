@@ -44,7 +44,7 @@ func (c *DeviceInfoConverter) Convert(registry metric.Registry, data any) error 
 	}
 
 	gauge := registry.GetOrCreateGaugeVec(
-		"smartcitizen_device_info",
+		c.metricName,
 		"Static information about Smart Citizen devices",
 		[]string{"uuid", "name", "description"},
 	)
