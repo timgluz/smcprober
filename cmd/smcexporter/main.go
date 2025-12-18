@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -221,7 +222,9 @@ func initSmartCitizenProvider(appConfig AppConfig, registry *metric.NamespacedRe
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	var config AppConfig
-	file, err := os.Open(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return config, err
 	}

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 
 	"github.com/joho/godotenv"
 	"github.com/timgluz/smcprober/httpclient"
@@ -147,7 +148,9 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	var config AppConfig
-	file, err := os.Open(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Open(cleanPath)
 	if err != nil {
 		return config, err
 	}
@@ -168,7 +171,9 @@ func loadConfigFromJSONFile(path string) (AppConfig, error) {
 }
 
 func saveFile(path string, reader io.Reader) error {
-	file, err := os.Create(path)
+	// Clean the path to prevent path traversal attacks
+	cleanPath := filepath.Clean(path)
+	file, err := os.Create(cleanPath)
 	if err != nil {
 		return err
 	}
