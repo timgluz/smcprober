@@ -12,6 +12,7 @@ import (
 
 	"github.com/timgluz/smcprober/alert"
 	"github.com/timgluz/smcprober/httpclient"
+	"github.com/timgluz/smcprober/metric"
 	"github.com/timgluz/smcprober/ntfy"
 	"github.com/timgluz/smcprober/smartcitizen"
 )
@@ -63,7 +64,11 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
-	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
+	// Create shared metric registry
+	namespace := "smartcitizen"
+	registry := metric.NewNamespacedRegistry(namespace, logger)
+
+	smcProvider, err := initSmartCitizenProvider(appConfig, registry, logger)
 	if err != nil {
 		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
 		panic(err)
@@ -141,7 +146,7 @@ func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotif
 	return notifier, nil
 }
 
-func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
+func initSmartCitizenProvider(appConfig AppConfig, registry metric.Registry, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
 	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
@@ -151,6 +156,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
 		httpclient.NewDefaultHTTPClient(),
+		registry,
 		logger,
 	)
 
