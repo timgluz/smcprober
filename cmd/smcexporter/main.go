@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/timgluz/smcprober/httpclient"
+	"github.com/timgluz/smcprober/metric"
 	"github.com/timgluz/smcprober/smartcitizen"
 )
 
@@ -81,7 +82,11 @@ func main() {
 		Level: slog.LevelInfo,
 	}))
 
-	smcProvider, err := initSmartCitizenProvider(appConfig, logger)
+	// Create shared metric registry
+	namespace := "smartcitizen"
+	registry := metric.NewNamespacedRegistry(namespace, logger)
+
+	smcProvider, err := initSmartCitizenProvider(appConfig, registry, logger)
 	if err != nil {
 		logger.Error("Failed to initialize SmartCitizen provider", "error", err)
 		os.Exit(1)
@@ -92,7 +97,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	exporter := smartcitizen.NewAPIExporter(appConfig.Smc, smcProvider, logger)
+	exporter := smartcitizen.NewAPIExporterWithRegistry(appConfig.Smc, smcProvider, registry, logger)
 
 	// Create context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())
@@ -171,7 +176,7 @@ func main() {
 	}
 }
 
-func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
+func initSmartCitizenProvider(appConfig AppConfig, registry *metric.NamespacedRegistry, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
 	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
@@ -181,6 +186,7 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
 		httpclient.NewDefaultHTTPClient(),
+		registry,
 		logger,
 	)
 

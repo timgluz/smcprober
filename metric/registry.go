@@ -17,6 +17,7 @@ type Registry interface {
 	GetOrCreateCounter(name, help string) prometheus.Counter
 	GetOrCreateCounterVec(name, help string, labels []string) *prometheus.CounterVec
 	GetOrCreateHistogram(name, help string, buckets []float64) prometheus.Histogram
+	GetOrCreateHistogramVec(name, help string, buckets []float64, labels []string) *prometheus.HistogramVec
 }
 
 // NamespacedRegistry holds all metrics in maps
@@ -142,4 +143,21 @@ func (r *NamespacedRegistry) GetOrCreateHistogram(name, help string, buckets []f
 
 	r.Register(name, histogram)
 	return histogram
+}
+
+// GetOrCreateHistogramVec gets or creates a histogram vector metric
+func (r *NamespacedRegistry) GetOrCreateHistogramVec(name, help string, buckets []float64, labels []string) *prometheus.HistogramVec {
+	if histogramVec, exists := r.GetCollectorByName(name); exists {
+		return histogramVec.(*prometheus.HistogramVec)
+	}
+
+	histogramVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: r.namespace,
+		Name:      name,
+		Help:      help,
+		Buckets:   buckets,
+	}, labels)
+
+	r.Register(name, histogramVec)
+	return histogramVec
 }

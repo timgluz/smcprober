@@ -10,6 +10,9 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"github.com/timgluz/smcprober/httpclient"
+	"github.com/timgluz/smcprober/metric"
 )
 
 type OauthSession struct {
@@ -29,18 +32,33 @@ type Provider interface {
 }
 
 type HTTPProvider struct {
-	config  Config
-	session *OauthSession
+	config   Config
+	session  *OauthSession
+	registry metric.Registry
 
 	client *http.Client
 	logger *slog.Logger
 }
 
-func NewHTTPProvider(config Config, client *http.Client, logger *slog.Logger) *HTTPProvider {
+func NewHTTPProvider(config Config, client *http.Client, registry metric.Registry, logger *slog.Logger) *HTTPProvider {
+	// Create histogram for request duration
+	histogram := registry.GetOrCreateHistogramVec(
+		"api_request_duration_seconds",
+		"Duration of HTTP requests to SmartCitizen API",
+		[]float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0},
+		[]string{"endpoint", "status", "method"},
+	)
+
+	// Wrap the client's transport with instrumentation
+	if transport, ok := client.Transport.(*http.Transport); ok {
+		client.Transport = httpclient.NewInstrumentedTransport(transport, histogram)
+	}
+
 	return &HTTPProvider{
-		config: config,
-		client: client,
-		logger: logger,
+		config:   config,
+		client:   client,
+		registry: registry,
+		logger:   logger,
 	}
 }
 
