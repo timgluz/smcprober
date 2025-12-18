@@ -34,7 +34,7 @@ func (c *DeviceInfoConverter) Match(name string) bool {
 func (c *DeviceInfoConverter) Convert(registry metric.Registry, data any) error {
 	device, ok := data.(DeviceDetail)
 	if !ok {
-		return fmt.Errorf("%w Invalid data type %v", ErrInvalidDataType, reflect.TypeOf(data))
+		return fmt.Errorf("%w: Invalid data type %v", ErrInvalidDataType, reflect.TypeOf(data))
 	}
 
 	labels := prometheus.Labels{
