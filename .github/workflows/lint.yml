@@ -1,0 +1,134 @@
+name: Lint
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+# Cancel in-progress runs when a new commit is pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+jobs:
+  hadolint:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          config: .hadolint.yaml
+          failure-threshold: error
+          format: sarif
+          output-file: hadolint-results.sarif
+          no-fail: true
+      
+      - name: Upload Hadolint results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: hadolint-results.sarif
+          category: hadolint
+
+  yamllint:
+    name: Lint YAML Files
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+      
+      - name: Install yamllint
+        run: pip install yamllint
+      
+      - name: Run yamllint
+        run: |
+          yamllint --format github --config-file .yamllint.yml . || true
+
+      - name: Run yamllint (strict)
+        if: always()
+        run: |
+          echo "### YAML Linting Results" >> $GITHUB_STEP_SUMMARY
+          yamllint --format parsable --config-file .yamllint.yml . > yamllint-results.txt 2>&1 || true
+          if [ -s yamllint-results.txt ]; then
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat yamllint-results.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No YAML linting issues found!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  markdownlint:
+    name: Lint Markdown Files
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+      
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+      
+      - name: Run markdownlint
+        run: |
+          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules || true
+      
+      - name: Run markdownlint (detailed)
+        if: always()
+        run: |
+          echo "### Markdown Linting Results" >> $GITHUB_STEP_SUMMARY
+          markdownlint --config .markdownlint.json '**/*.md' --ignore node_modules > markdownlint-results.txt 2>&1 || true
+          if [ -s markdownlint-results.txt ]; then
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat markdownlint-results.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ No Markdown linting issues found!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  lint-summary:
+    name: Linting Summary
+    runs-on: ubuntu-latest
+    needs: [hadolint, yamllint, markdownlint]
+    if: always()
+    
+    steps:
+      - name: Check linting results
+        run: |
+          echo "### 📋 Linting Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All linting jobs completed. Check individual job results above." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Dockerfile (Hadolint): ${{ needs.hadolint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- YAML files (yamllint): ${{ needs.yamllint.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Markdown files (markdownlint): ${{ needs.markdownlint.result }}" >> $GITHUB_STEP_SUMMARY
