@@ -171,7 +171,7 @@ func (e *APIExporter) convertDeviceSensorsToMetrics(sensors []DeviceSensor) erro
 			e.logger.Error("Error converting sensor data to metrics", "sensorID", sensor.ID, "error", err)
 			errCounter := e.registry.GetOrCreateCounterVec(
 				"data_errors_total",
-				"total data processing errors",
+				"Total data processing errors",
 				[]string{"type"},
 			)
 
