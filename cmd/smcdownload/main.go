@@ -15,12 +15,7 @@ import (
 	"github.com/timgluz/smcprober/smartcitizen"
 )
 
-const (
-	DefaultConfigPath        = "configs/config.json"
-	DefaultBatterySensorName = "Battery SCK"
-
-	DeviceStateMetricName = "Device State"
-)
+const DefaultConfigPath = "configs/config.json"
 
 type AppConfig struct {
 	LogLevel   string `json:"log_level"`
