@@ -151,7 +151,11 @@ func loadConfigFromJSONFile(path string) (AppConfig, error) {
 	if err != nil {
 		return config, err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&config); err != nil {
@@ -168,7 +172,11 @@ func saveFile(path string, reader io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close file: %v\n", closeErr)
+		}
+	}()
 
 	_, err = io.Copy(file, reader)
 	if err != nil {

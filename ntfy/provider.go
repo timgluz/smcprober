@@ -62,7 +62,11 @@ func (n *HTTPNotifier) Send(ctx context.Context, msg Notification) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			n.logger.Warn("Failed to close response body", "error", closeErr)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("failed to send notification, status code: %d", resp.StatusCode)
