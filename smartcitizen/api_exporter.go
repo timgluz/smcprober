@@ -26,6 +26,11 @@ type APIExporter struct {
 func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIExporter {
 	namespace := "smartcitizen"
 	registry := metric.NewNamespacedRegistry(namespace, logger)
+	return NewAPIExporterWithRegistry(config, provider, registry, logger)
+}
+
+// NewAPIExporterWithRegistry creates a new APIExporter with an existing registry
+func NewAPIExporterWithRegistry(config Config, provider Provider, registry metric.Registry, logger *slog.Logger) *APIExporter {
 	// Register converters
 	converter := metric.NewCombinedConverter()
 	converter.Add(NewDeviceInfoConverter("device_info"),

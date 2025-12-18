@@ -12,6 +12,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/timgluz/smcprober/httpclient"
+	"github.com/timgluz/smcprober/metric"
 	"github.com/timgluz/smcprober/smartcitizen"
 )
 
@@ -126,8 +127,13 @@ func initSmartCitizenProvider(appConfig AppConfig, logger *slog.Logger) (*smartc
 		return nil, fmt.Errorf("failed to retrieve SmartCitizen credentials: %w", err)
 	}
 
+	// Create registry for metrics
+	namespace := "smartcitizen"
+	registry := metric.NewNamespacedRegistry(namespace, logger)
+
 	smcProvider := smartcitizen.NewHTTPProvider(appConfig.Smc,
 		httpclient.NewDefaultHTTPClient(),
+		registry,
 		logger,
 	)
 
