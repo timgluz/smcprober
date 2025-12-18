@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/gosimple/slug"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/timgluz/smcprober/metric"
 )
@@ -80,7 +79,7 @@ func (c *DeviceSensorConverter) Convert(registry metric.Registry, data any) erro
 	labels := prometheus.Labels{
 		"id":   strconv.Itoa(sensor.ID),
 		"uuid": sensor.UUID,
-		"name": slug.Make(sensor.Name),
+		"name": sensor.Name,
 	}
 
 	gauge.With(labels).Set(sensor.Value)
