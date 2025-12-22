@@ -166,8 +166,9 @@ func main() {
 
 	// Create HTTP server
 	server := &http.Server{
-		Addr:    ":" + port,
-		Handler: mux,
+		Addr:              ":" + port,
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	// Channel to listen for errors from the server

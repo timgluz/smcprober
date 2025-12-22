@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
@@ -160,13 +161,17 @@ func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
 }
 
 func loadDashboardConfig(path string) (*DashboardConfig, error) {
-	cleanPath := os.ExpandEnv(path)
+	cleanPath := filepath.Clean(os.ExpandEnv(path))
 	file, err := os.Open(cleanPath)
 	if err != nil {
 		return nil, err
 	}
 
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+		}
+	}()
 
 	content, err := io.ReadAll(file)
 	if err != nil {
