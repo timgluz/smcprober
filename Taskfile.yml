@@ -15,6 +15,10 @@ tasks:
     cmds:
       - echo "{{.GREETING}}"
     silent: true
+  "generate:device:dashboard":
+    cmds:
+      - echo "Generating SmartCitizen Device Dashboard..."
+      - go run cmd/gen-device-dashboard/main.go --config configs/device-dashboard.json > tmp/smc_device_dashboard.json
   "release:helm":
     cmds:
       - helm package helm --app-version "{{.VERSION}}"
@@ -27,7 +31,10 @@ tasks:
   "run:exporter":
     cmds:
       - "echo Starting SmartCitizen Exporter..."
-      - "go run cmd/smcexporter/main.go --config configs/config.json --dotenv .env"
+      - |
+        go run cmd/smcexporter/main.go \
+          --config configs/config-exporter-dev.json \
+          --dotenv .env"
 
   "run:job":
     cmds:
@@ -54,7 +61,8 @@ tasks:
       - |
         helm template dev ./helm --debug \
           --set "imagePullSecrets[0].name"="smcprober-registry" \
-          --set-file=config=configs/config-k8s.json \
+          --set-file=configJSON=configs/config-k8s.json \
+          --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
           --set serviceMonitor.enabled=true \
           > smcprober.yaml

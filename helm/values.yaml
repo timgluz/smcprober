@@ -8,7 +8,8 @@ namespace: smcprober
 replicaCount: 1
 
 # configuration of the application
-config: ""
+configJSON: ""
+configExporterJSON: ""
 # secrets for the application
 secret:
   env: ""

@@ -6,4 +6,6 @@ metadata:
   labels: {{- include "helm.labels" . | nindent 4 }}
 data:
   config.json: |
-{{ .Values.config | indent 4 }}
+{{ .Values.configJSON | indent 4 }}
+  configExporter.json: |
+{{ .Values.configExporterJSON | indent 4 }}

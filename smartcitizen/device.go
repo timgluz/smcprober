@@ -90,8 +90,9 @@ type DeviceLocation struct {
 }
 
 type DeviceSensor struct {
-	ID   int    `json:"id"`
-	UUID string `json:"uuid"`
+	ID         int    `json:"id"`
+	UUID       string `json:"uuid"`
+	DeviceUUID string `json:"device_uuid"`
 
 	Name        string  `json:"name"`
 	Description string  `json:"description"`

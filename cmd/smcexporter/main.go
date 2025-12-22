@@ -23,14 +23,20 @@ import (
 const DefaultConfigPath = "configs/config.json"
 
 type AppConfig struct {
+	Namespace      string `json:"namespace"`
 	ScrapeInterval int    `json:"scrape_interval"`
 	LogLevel       string `json:"log_level"`
 	DotEnvPath     string `json:"dotenv_path"`
 
-	Smc smartcitizen.Config `json:"smartcitizen"`
+	Smc           smartcitizen.Config                 `json:"smartcitizen"`
+	SensorMapping map[string]metric.MetricMappingItem `json:"sensor_mapping"`
 }
 
 func (c *AppConfig) ApplyDefaults() {
+	if c.Namespace == "" {
+		c.Namespace = "smartcitizen"
+	}
+
 	if c.ScrapeInterval <= 0 {
 		c.ScrapeInterval = 30 // Default to 30 seconds
 	}
@@ -94,8 +100,7 @@ func main() {
 	}))
 
 	// Create shared metric registry
-	namespace := "smartcitizen"
-	registry := metric.NewNamespacedRegistry(namespace, logger)
+	registry := metric.NewNamespacedRegistry(appConfig.Namespace, logger)
 
 	smcProvider, err := initSmartCitizenProvider(appConfig, registry, logger)
 	if err != nil {
@@ -108,7 +113,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	exporter := smartcitizen.NewAPIExporterWithRegistry(appConfig.Smc, smcProvider, registry, logger)
+	sensorMapping, err := initSensorMapping(appConfig.SensorMapping, logger)
+	if err != nil {
+		logger.Error("Failed to initialize sensor mapping", "error", err)
+		os.Exit(1)
+	}
+
+	exporter := smartcitizen.NewAPIExporterWithRegistry(appConfig.Smc,
+		smcProvider, registry, sensorMapping, logger,
+	)
 
 	// Create context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())
@@ -121,7 +134,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.Handler())
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		if _, err := w.Write([]byte("OK")); err != nil {
 			logger.Error("Failed to write /health response", "error", err)
@@ -218,6 +231,16 @@ func initSmartCitizenProvider(appConfig AppConfig, registry *metric.NamespacedRe
 	}
 
 	return smcProvider, nil
+}
+
+func initSensorMapping(mappingConfig map[string]metric.MetricMappingItem, logger *slog.Logger) (*metric.SensorMetricMapping, error) {
+	sensorMapping := metric.NewSensorMetricMapping()
+	for sensorName, item := range mappingConfig {
+		sensorMapping.Add(sensorName, item)
+		logger.Debug("Added sensor mapping", "sensor", sensorName, "metric", item.Metric, "category", item.Category)
+	}
+
+	return sensorMapping, nil
 }
 
 func loadConfigFromJSONFile(path string) (AppConfig, error) {
