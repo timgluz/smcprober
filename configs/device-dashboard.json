@@ -2,6 +2,15 @@
   "title": "SmartCitizen Device details",
   "charts": [
     {
+      "title": "Device Details",
+      "description": "Details of the SmartCitizen device.",
+      "metric": "device_info",
+      "panel": "device",
+      "type": "instant_table",
+      "query": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
+      "span": 24
+    },
+    {
       "title": "Battery Level",
       "description": "Battery level of the SmartCitizen device.",
       "metric": "battery",

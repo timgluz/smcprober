@@ -12,12 +12,23 @@ import (
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
 )
 
+const (
+	DefaultConfigPath = "configs/device-dashboard.json"
+	DefaultHeight     = 6
+	MaxPanelHeight    = 20
+	MaxPanelSpan      = 24
+	DefaultSpan       = 8 // 24 / 3 columns
+	DefaultChartType  = "gauge"
+)
+
 type SensorChartConfig struct {
 	Title  string `json:"title"`
 	Metric string `json:"metric"`
 	Panel  string `json:"panel"`
 	Type   string `json:"type"`
 	Query  string `json:"query"`
+	Span   uint32 `json:"span,omitempty"`
+	Height uint32 `json:"height,omitempty"`
 }
 
 type DashboardConfig struct {
@@ -86,7 +97,6 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 
 	// add device state panel first
 	rowBuilder := dashboard.NewRowBuilder("Device Information")
-	rowBuilder.WithPanel(newDeviceInfoPanel())
 	for _, chart := range groupedCharts["device"] {
 		rowBuilder.WithPanel(newChartPanel(chart))
 	}
@@ -109,15 +119,7 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 		return nil, err
 	}
 
-	// Create the provisioning wrapper with folder
-	provisioning := map[string]interface{}{
-		"dashboard": dashboardObj,
-		"folderId":  nil,
-		"folderUid": "SmartCitizen", // This sets the folder
-		"overwrite": true,
-	}
-
-	dashboardJSON, err := json.MarshalIndent(provisioning, "", "  ")
+	dashboardJSON, err := json.MarshalIndent(dashboardObj, "", "  ")
 	if err != nil {
 		return nil, err
 	}
@@ -125,33 +127,36 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 	return dashboardJSON, nil
 }
 
-func newDeviceInfoPanel() *dashboard.PanelBuilder {
-	return dashboard.NewPanelBuilder().
-		Title("Device Details").
-		Type("table").
-		Height(6).
-		Span(8).
-		WithTarget(
-			prometheus.NewDataqueryBuilder().
-				Expr(`group by (name, uuid, description) (smartcitizen_device_info{uuid=~"$device"})`).
-				Instant().
-				Format(prometheus.PromQueryFormatTable).
-				RefId("A"),
-		)
-}
-
 func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
+	queryBuilder := prometheus.NewDataqueryBuilder().
+		Expr(config.Query).
+		RefId("A")
+
+	switch config.Type {
+	case "instant_table":
+		queryBuilder.Format(prometheus.PromQueryFormatTable).Instant()
+	case "table":
+		queryBuilder.Format(prometheus.PromQueryFormatTable)
+	default:
+		queryBuilder.Format(prometheus.PromQueryFormatTimeSeries)
+	}
+
+	var width = uint32(DefaultSpan)
+	if config.Span > 0 && config.Span <= MaxPanelSpan {
+		width = config.Span
+	}
+
+	var height = uint32(DefaultHeight)
+	if config.Height > 0 && config.Height < MaxPanelHeight {
+		height = config.Height
+	}
+
 	return dashboard.NewPanelBuilder().
 		Title(config.Title).
 		Type(config.Type).
-		Height(6).
-		Span(8).
-		WithTarget(
-			prometheus.NewDataqueryBuilder().
-				Expr(config.Query).
-				RefId("A").
-				Format(prometheus.PromQueryFormatTimeSeries),
-		)
+		Height(height).
+		Span(width).
+		WithTarget(queryBuilder)
 }
 
 func loadDashboardConfig(path string) (*DashboardConfig, error) {
