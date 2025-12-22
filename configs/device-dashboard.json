@@ -6,8 +6,9 @@
       "description": "Details of the SmartCitizen device.",
       "metric": "device_info",
       "panel": "device",
-      "type": "instant_table",
+      "type": "table",
       "query": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
+      "instant": true,
       "span": 24
     },
     {

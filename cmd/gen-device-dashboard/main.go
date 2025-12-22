@@ -23,13 +23,14 @@ const (
 )
 
 type SensorChartConfig struct {
-	Title  string `json:"title"`
-	Metric string `json:"metric"`
-	Panel  string `json:"panel"`
-	Type   string `json:"type"`
-	Query  string `json:"query"`
-	Span   uint32 `json:"span,omitempty"`
-	Height uint32 `json:"height,omitempty"`
+	Title   string `json:"title"`
+	Metric  string `json:"metric"`
+	Panel   string `json:"panel"`
+	Type    string `json:"type"`
+	Query   string `json:"query"`
+	Instant bool   `json:"instant,omitempty"`
+	Span    uint32 `json:"span,omitempty"`
+	Height  uint32 `json:"height,omitempty"`
 }
 
 type DashboardConfig struct {
@@ -134,12 +135,14 @@ func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
 		RefId("A")
 
 	switch config.Type {
-	case "instant_table":
-		queryBuilder.Format(prometheus.PromQueryFormatTable).Instant()
 	case "table":
 		queryBuilder.Format(prometheus.PromQueryFormatTable)
 	default:
 		queryBuilder.Format(prometheus.PromQueryFormatTimeSeries)
+	}
+
+	if config.Instant {
+		queryBuilder.Instant()
 	}
 
 	var width = uint32(DefaultSpan)
@@ -169,7 +172,7 @@ func loadDashboardConfig(path string) (*DashboardConfig, error) {
 
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
-			fmt.Fprintf(os.Stderr, "Failed to close config file: %v\n", closeErr)
+			fmt.Fprintf(os.Stderr, "Failed to close dashboard config file: %v\n", closeErr)
 		}
 	}()
 

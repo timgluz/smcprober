@@ -30,7 +30,7 @@
       "id": 0,
       "panels": [
         {
-          "type": "instant_table",
+          "type": "table",
           "targets": [
             {
               "expr": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
@@ -108,98 +108,12 @@
     {
       "type": "row",
       "collapsed": true,
-      "title": "environment",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 13
-      },
-      "id": 0,
-      "panels": [
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Temperature",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 14
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Humidity",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 14
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Barometric Pressure",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 14
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Weighted Noise Level",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 20
-          }
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "collapsed": true,
       "title": "light",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 13
       },
       "id": 0,
       "panels": [
@@ -218,7 +132,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 27
+            "y": 14
           }
         },
         {
@@ -236,7 +150,7 @@
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 27
+            "y": 14
           }
         },
         {
@@ -254,7 +168,7 @@
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 27
+            "y": 14
           }
         },
         {
@@ -272,7 +186,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 33
+            "y": 20
           }
         }
       ]
@@ -285,7 +199,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 39
+        "y": 26
       },
       "id": 0,
       "panels": [
@@ -304,7 +218,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 40
+            "y": 27
           }
         },
         {
@@ -322,7 +236,7 @@
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 40
+            "y": 27
           }
         },
         {
@@ -340,7 +254,7 @@
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 40
+            "y": 27
           }
         },
         {
@@ -358,7 +272,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 46
+            "y": 33
           }
         },
         {
@@ -376,7 +290,7 @@
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 46
+            "y": 33
           }
         },
         {
@@ -394,7 +308,7 @@
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 46
+            "y": 33
           }
         },
         {
@@ -412,7 +326,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 52
+            "y": 39
           }
         },
         {
@@ -430,7 +344,7 @@
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 52
+            "y": 39
           }
         },
         {
@@ -448,7 +362,7 @@
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 52
+            "y": 39
           }
         },
         {
@@ -461,6 +375,92 @@
             }
           ],
           "title": "PN10.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 45
+          }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "environment",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Temperature",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Humidity",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Barometric Pressure",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Weighted Noise Level",
           "transparent": false,
           "gridPos": {
             "h": 6,
