@@ -65,6 +65,7 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 		Tags([]string{"smartcitizen", "device", "sensors"}).
 		Refresh("5m").
 		Time("now-1h", "now").
+		Editable().
 		WithVariable(
 			dashboard.NewQueryVariableBuilder("device").
 				Label("name of selected device").
@@ -89,7 +90,6 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 	for _, chart := range groupedCharts["device"] {
 		rowBuilder.WithPanel(newChartPanel(chart))
 	}
-	rowBuilder.Collapsed(false)
 	builder.WithRow(rowBuilder)
 	delete(groupedCharts, "device")
 
@@ -109,7 +109,15 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 		return nil, err
 	}
 
-	dashboardJSON, err := json.MarshalIndent(dashboardObj, "", "  ")
+	// Create the provisioning wrapper with folder
+	provisioning := map[string]interface{}{
+		"dashboard": dashboardObj,
+		"folderId":  nil,
+		"folderUid": "SmartCitizen", // This sets the folder
+		"overwrite": true,
+	}
+
+	dashboardJSON, err := json.MarshalIndent(provisioning, "", "  ")
 	if err != nil {
 		return nil, err
 	}

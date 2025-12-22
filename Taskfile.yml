@@ -18,7 +18,10 @@ tasks:
   "generate:device:dashboard":
     cmds:
       - echo "Generating SmartCitizen Device Dashboard..."
-      - go run cmd/gen-device-dashboard/main.go --config configs/device-dashboard.json > tmp/smc_device_dashboard.json
+      - |
+        go run cmd/gen-device-dashboard/main.go \
+          --config configs/device-dashboard.json \
+          > helm/dashboards/device-details.json
   "release:helm":
     cmds:
       - helm package helm --app-version "{{.VERSION}}"

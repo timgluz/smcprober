@@ -204,3 +204,7 @@ nodeSelector:
 tolerations: []
 
 affinity: {}
+
+grafana:
+  namespace: monitoring
+  folder: SmartCitizen
