@@ -37,7 +37,7 @@ jobs:
         id: cache-promtool
         uses: actions/cache@v4
         with:
-          path: /usr/local/bin/promtool
+          path: ~/.local/bin/promtool
           key: promtool-${{ runner.os }}-${{ steps.prometheus-version.outputs.version }}
 
       - name: Download and install promtool
@@ -48,11 +48,15 @@ jobs:
           # Download and extract promtool
           wget -q https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
           tar -xzf prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
-          sudo mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool /usr/local/bin/
-          sudo chmod +x /usr/local/bin/promtool
+          mkdir -p ~/.local/bin
+          mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool ~/.local/bin/
+          chmod +x ~/.local/bin/promtool
 
-      - name: Verify promtool installation
-        run: promtool --version
+      - name: Add promtool to PATH and verify installation
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          export PATH="$HOME/.local/bin:$PATH"
+          promtool --version
 
       - name: Validate alert rule syntax
         run: promtool check rules helm/alerts/*.yaml
