@@ -25,6 +25,10 @@ const (
 	DeviceStateMetricName = "Device State"
 )
 
+var (
+	ErrLoggerNil = fmt.Errorf("logger cannot be nil")
+)
+
 type AppConfig struct {
 	BatterySensorName string `json:"battery_sensor_name"`
 
@@ -143,6 +147,14 @@ func loadConfigFromJSONFile(path string) (AppConfig, error) {
 }
 
 func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotifier, error) {
+	if logger == nil {
+		return nil, ErrLoggerNil
+	}
+
+	if appConfig.Ntfy.Endpoint == "" {
+		return nil, fmt.Errorf("ntfy endpoint cannot be empty")
+	}
+
 	notifier := ntfy.NewHTTPNotifier(appConfig.Ntfy.Endpoint, httpclient.NewDefaultHTTPClient(), logger)
 
 	if appConfig.Ntfy.TokenEnv != "" {
@@ -156,6 +168,14 @@ func initNtfyNotifier(appConfig AppConfig, logger *slog.Logger) (*ntfy.HTTPNotif
 }
 
 func initSmartCitizenProvider(appConfig AppConfig, registry metric.Registry, logger *slog.Logger) (*smartcitizen.HTTPProvider, error) {
+	if logger == nil {
+		return nil, ErrLoggerNil
+	}
+
+	if appConfig.Smc.Endpoint == "" {
+		return nil, fmt.Errorf("SmartCitizen endpoint cannot be empty")
+	}
+
 	smcCredProvider := smartcitizen.NewUserCredentialEnvProvider(appConfig.Smc.UsernameEnv, appConfig.Smc.PasswordEnv, appConfig.Smc.TokenEnv)
 	credentials, err := smcCredProvider.Retrieve(context.Background())
 	if err != nil {
@@ -178,8 +198,11 @@ func initSmartCitizenProvider(appConfig AppConfig, registry metric.Registry, log
 }
 
 func initAlertEngine(appConfig AppConfig, notifier ntfy.Notifier, logger *slog.Logger) (*alert.AlertingEngine, error) {
-	engine := alert.NewAlertingEngine(logger)
+	if logger == nil {
+		return nil, ErrLoggerNil
+	}
 
+	engine := alert.NewAlertingEngine(logger)
 	batterySensorName := appConfig.BatterySensorName
 
 	engine.AddRule(alert.AlertRule{

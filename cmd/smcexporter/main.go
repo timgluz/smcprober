@@ -235,6 +235,10 @@ func initSmartCitizenProvider(appConfig AppConfig, registry *metric.NamespacedRe
 }
 
 func initSensorMapping(mappingConfig map[string]metric.MetricMappingItem, logger *slog.Logger) (*metric.SensorMetricMapping, error) {
+	if logger == nil {
+		return nil, fmt.Errorf("logger cannot be nil")
+	}
+
 	sensorMapping := metric.NewSensorMetricMapping()
 	for sensorName, item := range mappingConfig {
 		sensorMapping.Add(sensorName, item)
