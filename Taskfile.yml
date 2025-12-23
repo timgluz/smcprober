@@ -18,7 +18,7 @@ tasks:
   "test:alerts":
     cmds:
       - echo "Running alert tests for SmartCitizen device low battery..."
-      - promtool test rules tests/alerts/test*.yaml
+      - promtool test rules tests/alerts/test_*.yaml
 
   "generate:device:dashboard":
     cmds:
