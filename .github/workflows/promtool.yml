@@ -1,0 +1,46 @@
+name: Promtool Alert Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  alert-validation:
+    name: Validate Alert Rules and Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download and install promtool
+        run: |
+          # Get latest Prometheus release
+          PROMETHEUS_VERSION=$(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep tag_name | cut -d'"' -f4 | sed 's/v//')
+
+          # Download and extract promtool
+          wget -q https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+          tar -xzf prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+          sudo mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool /usr/local/bin/
+
+          # Verify installation
+          promtool --version
+
+      - name: Validate alert rule syntax
+        run: promtool check rules helm/alerts/*.yaml
+
+      - name: Run alert rule tests
+        run: promtool test rules tests/alerts/test_*.yaml
