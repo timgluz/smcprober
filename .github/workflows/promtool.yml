@@ -1,0 +1,64 @@
+name: Promtool Alert Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  alert-validation:
+    name: Validate Alert Rules and Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Get Prometheus version
+        id: prometheus-version
+        run: |
+          PROMETHEUS_VERSION=$(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep tag_name | cut -d'"' -f4 | sed 's/v//')
+          echo "version=${PROMETHEUS_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Cache promtool
+        id: cache-promtool
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/bin/promtool
+          key: promtool-${{ runner.os }}-${{ steps.prometheus-version.outputs.version }}
+
+      - name: Download and install promtool
+        if: steps.cache-promtool.outputs.cache-hit != 'true'
+        run: |
+          PROMETHEUS_VERSION="${{ steps.prometheus-version.outputs.version }}"
+
+          # Download and extract promtool
+          wget -q https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+          tar -xzf prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
+
+          # Install to cached location
+          mkdir -p ~/.local/bin
+          mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool ~/.local/bin/
+
+      - name: Add promtool to PATH
+        run: |
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          promtool --version
+
+      - name: Validate alert rule syntax
+        run: promtool check rules helm/alerts/*.yaml
+
+      - name: Run alert rule tests
+        run: promtool test rules tests/alerts/test_*.yaml
