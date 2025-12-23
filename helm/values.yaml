@@ -214,9 +214,10 @@ prometheus:
 
 alertmanager:
   webhooks:
-    default: "https://ntfy.sh/smartcitizen-dev-alerts?template=alertmanager"
-    critical: "https://ntfy.sh/smartcitizen-critical-alerts?template=alertmanager"
-    on_call: "https://ntfy.sh/smartcitizen-on-call-alerts?template=alertmanager"
+    # Set these webhook URLs via a private values file or secrets; defaults are intentionally empty.
+    default: ""
+    critical: ""
+    on_call: ""
   groupWait: "10s"
   groupInterval: "5m"
   repeatInterval: "12h"
