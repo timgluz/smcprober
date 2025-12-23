@@ -15,6 +15,11 @@ tasks:
     cmds:
       - echo "{{.GREETING}}"
     silent: true
+  "test:alerts":
+    cmds:
+      - echo "Running alert tests for SmartCitizen device low battery..."
+      - promtool test rules tests/alerts/test_*.yaml
+
   "generate:device:dashboard":
     cmds:
       - echo "Generating SmartCitizen Device Dashboard..."
@@ -22,8 +27,13 @@ tasks:
         go run cmd/gen-device-dashboard/main.go \
           --config configs/device-dashboard.json \
           > helm/dashboards/device-details.json
+  "generate:dashboards":
+    cmds:
+      - task: generate:device:dashboard
+
   "release:helm":
     cmds:
+      - task: generate:dashboards
       - helm package helm --app-version "{{.VERSION}}"
       - helm push smcprober-*.tgz oci://registry-1.docker.io/tauho
       - rm smcprober-*.tgz
@@ -63,11 +73,15 @@ tasks:
     cmds:
       - |
         helm template dev ./helm --debug \
+          --namespace {{.SMC_NAMESPACE}} \
           --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
           --set serviceMonitor.enabled=true \
+          --set alertmanager.enabled=true \
+          --set alertmanager.webhooks.default="{{.NTFY_DEFAULT_WEBHOOK_URL}}" \
+          --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}" \
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
 

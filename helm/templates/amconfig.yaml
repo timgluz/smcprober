@@ -1,0 +1,35 @@
+{{- if .Values.alertmanager.enabled }}
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: {{ include "helm.name" . }}-amconfig
+  namespace: {{ $.Values.namespace }}
+spec:
+  route:
+    receiver: 'default-receiver'
+    groupBy: ['alertname', 'cluster', 'service']
+    groupWait: {{ .Values.alertmanager.groupWait | default "60s" }}
+    groupInterval: {{ .Values.alertmanager.groupInterval | default "5m" }}
+    repeatInterval: {{ .Values.alertmanager.repeatInterval | default "12h" }}
+    # Child routes for specific alerts
+    routes:
+    - receiver: 'critical-receiver'
+      matchers:
+      - name: severity
+        value: critical
+        matchType: '='
+      groupWait: 10s
+      repeatInterval: 5m
+
+  receivers:
+  - name: 'default-receiver'
+    webhookConfigs:
+    - url: {{ .Values.alertmanager.webhooks.default | quote }}
+      sendResolved: true
+  - name: 'critical-receiver'
+    webhookConfigs:
+    - url: {{ .Values.alertmanager.webhooks.critical | quote }}
+      sendResolved: true
+{{- else }}
+# Alertmanager is disabled; no AlertmanagerConfig will be created.
+{{- end }}

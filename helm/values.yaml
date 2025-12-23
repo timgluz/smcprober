@@ -166,7 +166,7 @@ livenessProbe:
     port: http
 readinessProbe:
   httpGet:
-    path: /health
+    path: /readyz
     port: http
 
 # This section is for setting up autoscaling more information can be found here: https://kubernetes.io/docs/concepts/workloads/autoscaling/
@@ -208,3 +208,16 @@ affinity: {}
 grafana:
   namespace: monitoring
   folder: SmartCitizen
+
+prometheus:
+  namespace: monitoring
+
+alertmanager:
+  enabled: true
+  webhooks:
+    # Set these webhook URLs via a private values file or secrets; defaults are intentionally empty.
+    default: ""
+    critical: ""
+  groupWait: "10s"
+  groupInterval: "5m"
+  repeatInterval: "12h"
