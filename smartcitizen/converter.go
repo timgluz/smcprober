@@ -74,14 +74,12 @@ func (c *DeviceSensorConverter) Convert(registry metric.Registry, data any) erro
 		return ErrInvalidDataType
 	}
 
-	metricName := c.metricName
+	// Default to the generic state metric name
+	metricName := c.metricName + "_state"
 	sensorMetric, exists := c.sensorMapping.Get(sensor.Name)
-	if !exists || sensorMetric.Metric == "" {
-		metricName = c.metricName + "_state"
-	}
 
-	// Use the mapped metric name if available
-	if sensorMetric.Metric != "" {
+	// Use the mapped metric name only if the mapping exists and has a non-empty Metric field
+	if exists && sensorMetric.Metric != "" {
 		metricName = c.metricName + "_" + sensorMetric.MetricName()
 	}
 

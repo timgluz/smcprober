@@ -37,7 +37,7 @@ tasks:
       - |
         go run cmd/smcexporter/main.go \
           --config configs/config-exporter-dev.json \
-          --dotenv .env"
+          --dotenv .env
 
   "run:job":
     cmds:
