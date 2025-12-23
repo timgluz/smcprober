@@ -7,7 +7,7 @@ tests:
   - interval: 1m
     name: TestDeviceLowBattery_NoAlert
     input_series:
-      - series: 'smartcitizen_device_battery_level{device="device_123"}'
+      - series: 'smartcitizen_sensor_device_battery{device="device_123"}'
         values: "25+0x10"
     alert_rule_test:
       - eval_time: 5m
@@ -19,7 +19,7 @@ tests:
   - interval: 1m
     name: TestDeviceLowBattery_WarningAlert
     input_series:
-      - series: 'smartcitizen_device_battery_level{device="device_124"}'
+      - series: 'smartcitizen_sensor_device_battery{device="device_124"}'
         values: "15+0x10"
     alert_rule_test:
       - eval_time: 5m
@@ -40,7 +40,7 @@ tests:
   - interval: 1m
     name: TestDeviceCriticalBattery_CriticalAlert
     input_series:
-      - series: 'smartcitizen_device_battery_level{device="device_125"}'
+      - series: 'smartcitizen_sensor_device_battery{device="device_125"}'
         values: "3+0x10"
     alert_rule_test:
       - eval_time: 3m
