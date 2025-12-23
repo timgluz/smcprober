@@ -1,0 +1,27 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_device_alerts
+    rules:
+      - alert: DeviceLowBattery
+        expr: |-
+          smartcitizen_device_battery_level < 20
+            and smartcitizen_device_battery_level >= 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} has low battery"
+          description: |-
+            The battery level of device {{ $labels.device }} is at {{ $value }}%.
+            Please recharge or replace the battery soon to ensure continued operation.
+      - alert: DeviceCriticalBattery
+        expr: smartcitizen_device_battery_level < 5
+        for: 5m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} has critical battery level"
+          description: |-
+            The battery level of device {{ $labels.device }} is at {{ $value }}%.
+            Immediate action is required to recharge or replace the battery to prevent device shutdown.

@@ -1,0 +1,60 @@
+rule_files:
+  - ../../helm/alerts/device_low_battery.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestDeviceLowBattery_NoAlert
+    input_series:
+      - series: 'smartcitizen_device_battery_level{device="device_123"}'
+        values: "25+0x10"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: DeviceLowBattery
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: DeviceLowBattery
+        exp_alerts: []
+  - interval: 1m
+    name: TestDeviceLowBattery_WarningAlert
+    input_series:
+      - series: 'smartcitizen_device_battery_level{device="device_124"}'
+        values: "15+0x10"
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: DeviceLowBattery
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: DeviceLowBattery
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 has low battery"
+              description: |-
+                The battery level of device device_124 is at 15%.
+                Please recharge or replace the battery soon to ensure continued operation.
+
+  - interval: 1m
+    name: TestDeviceCriticalBattery_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_device_battery_level{device="device_125"}'
+        values: "3+0x10"
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: DeviceCriticalBattery
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: DeviceCriticalBattery
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 has critical battery level"
+              description: |-
+                The battery level of device device_125 is at 3%.
+                Immediate action is required to recharge or replace the battery to prevent device shutdown.

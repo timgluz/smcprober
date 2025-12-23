@@ -208,3 +208,6 @@ affinity: {}
 grafana:
   namespace: monitoring
   folder: SmartCitizen
+
+prometheus:
+  namespace: monitoring

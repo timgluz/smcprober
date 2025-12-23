@@ -15,6 +15,11 @@ tasks:
     cmds:
       - echo "{{.GREETING}}"
     silent: true
+  "test:alerts":
+    cmds:
+      - echo "Running alert tests for SmartCitizen device low battery..."
+      - promtool test rules tests/alerts/test*.yaml
+
   "generate:device:dashboard":
     cmds:
       - echo "Generating SmartCitizen Device Dashboard..."
@@ -22,8 +27,13 @@ tasks:
         go run cmd/gen-device-dashboard/main.go \
           --config configs/device-dashboard.json \
           > helm/dashboards/device-details.json
+  "generate:dashboards":
+    cmds:
+      - task: generate:device:dashboard
+
   "release:helm":
     cmds:
+      - task: generate:dashboards
       - helm package helm --app-version "{{.VERSION}}"
       - helm push smcprober-*.tgz oci://registry-1.docker.io/tauho
       - rm smcprober-*.tgz
