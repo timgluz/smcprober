@@ -26,18 +26,33 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download and install promtool
+      - name: Get Prometheus version
+        id: prometheus-version
         run: |
-          # Get latest Prometheus release
           PROMETHEUS_VERSION=$(curl -s https://api.github.com/repos/prometheus/prometheus/releases/latest | grep tag_name | cut -d'"' -f4 | sed 's/v//')
+          echo "version=${PROMETHEUS_VERSION}" >> $GITHUB_OUTPUT
+          echo "Prometheus version: ${PROMETHEUS_VERSION}"
 
+      - name: Cache promtool
+        id: cache-promtool
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/bin/promtool
+          key: promtool-${{ runner.os }}-${{ steps.prometheus-version.outputs.version }}
+
+      - name: Download and install promtool
+        if: steps.cache-promtool.outputs.cache-hit != 'true'
+        run: |
+          PROMETHEUS_VERSION=${{ steps.prometheus-version.outputs.version }}
+          
           # Download and extract promtool
           wget -q https://github.com/prometheus/prometheus/releases/download/v${PROMETHEUS_VERSION}/prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
           tar -xzf prometheus-${PROMETHEUS_VERSION}.linux-amd64.tar.gz
           sudo mv prometheus-${PROMETHEUS_VERSION}.linux-amd64/promtool /usr/local/bin/
+          sudo chmod +x /usr/local/bin/promtool
 
-          # Verify installation
-          promtool --version
+      - name: Verify promtool installation
+        run: promtool --version
 
       - name: Validate alert rule syntax
         run: promtool check rules helm/alerts/*.yaml
