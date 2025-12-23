@@ -40,7 +40,7 @@ type DashboardConfig struct {
 
 func main() {
 	var configPath string
-	flag.StringVar(&configPath, "config", "configs/device-dashboard.json", "Path to configuration file (not used currently)")
+	flag.StringVar(&configPath, "config", "configs/device-dashboard.json", "Path to configuration file")
 	flag.Parse()
 
 	dashboardConfig, err := loadDashboardConfig(configPath)
