@@ -23,8 +23,7 @@ type APIExporter struct {
 	dataErrorCounter *prometheus.CounterVec
 }
 
-func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIExporter {
-	namespace := "smartcitizen" // TODO: make configurable
+func NewAPIExporter(namespace string, config Config, provider Provider, logger *slog.Logger) *APIExporter {
 	registry := metric.NewNamespacedRegistry(namespace, logger)
 	sensorMapping := metric.NewSensorMetricMapping()
 
