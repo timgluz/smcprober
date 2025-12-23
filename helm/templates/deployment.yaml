@@ -40,7 +40,7 @@ spec:
           command: ["/app/smcexporter"]
           args:
             - "--config"
-            - "/app/configs/config.json"
+            - "/app/configs/configExporter.json"
             - "--dotenv"
             - "/app/secrets/env"
             - "--port"

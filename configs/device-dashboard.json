@@ -1,0 +1,183 @@
+{
+  "title": "SmartCitizen Device details",
+  "charts": [
+    {
+      "title": "Device Details",
+      "description": "Details of the SmartCitizen device.",
+      "metric": "device_info",
+      "panel": "device",
+      "type": "table",
+      "query": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
+      "instant": true,
+      "span": 24
+    },
+    {
+      "title": "Battery Level",
+      "description": "Battery level of the SmartCitizen device.",
+      "metric": "battery",
+      "panel": "device",
+      "type": "gauge",
+      "query": "smartcitizen_sensor_device_battery{device=~\"$device\"}"
+    },
+    {
+      "title": "WiFi Signal Strength",
+      "description": "WiFi signal strength (RSSI) of the SmartCitizen device.",
+      "metric": "rssi",
+      "panel": "device",
+      "type": "gauge",
+      "query": "smartcitizen_sensor_device_rssi{device=~\"$device\"}"
+    },
+    {
+      "title": "SD Card Status",
+      "description": "SD Card status of the SmartCitizen device.",
+      "metric": "sd_card",
+      "panel": "device",
+      "type": "gauge",
+      "query": "smartcitizen_sensor_device_sd_card{device=~\"$device\"}"
+    },
+    {
+      "title": "Temperature",
+      "description": "Ambient temperature measured by the SmartCitizen device.",
+      "metric": "temperature",
+      "panel": "environment",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}"
+    },
+    {
+      "title": "Humidity",
+      "description": "Ambient humidity measured by the SmartCitizen device.",
+      "metric": "humidity",
+      "panel": "environment",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}"
+    },
+    {
+      "title": "Barometric Pressure",
+      "description": "Barometric pressure measured by the SmartCitizen device.",
+      "metric": "barometric_pressure",
+      "panel": "environment",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}"
+    },
+    {
+      "title": "Weighted Noise Level",
+      "description": "Weighted noise level (A weighting) measured by the SmartCitizen device.",
+      "metric": "weighted_noise_level",
+      "panel": "environment",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}"
+    },
+    {
+      "title": "Ambient Light",
+      "description": "Ambient light level measured by the SmartCitizen device.",
+      "metric": "ambient_light",
+      "panel": "light",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_ambient_light{device=~\"$device\"}"
+    },
+    {
+      "title": "UVA",
+      "description": "UVA radiation level measured by the SmartCitizen device.",
+      "metric": "uva",
+      "panel": "light",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_uva{device=~\"$device\"}"
+    },
+    {
+      "title": "UVB",
+      "description": "UVB radiation level measured by the SmartCitizen device.",
+      "metric": "uvb",
+      "panel": "light",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_uvb{device=~\"$device\"}"
+    },
+    {
+      "title": "UVC",
+      "description": "UVC radiation level measured by the SmartCitizen device.",
+      "metric": "uvc",
+      "panel": "light",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_uvc{device=~\"$device\"}"
+    },
+    {
+      "title": "PM1.0",
+      "description": "Particulate Matter 1.0 measured by the SmartCitizen device.",
+      "metric": "pm1",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pm1{device=~\"$device\"}"
+    },
+    {
+      "title": "PM2.5",
+      "description": "Particulate Matter 2.5 measured by the SmartCitizen device.",
+      "metric": "pm2_5",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pm2_5{device=~\"$device\"}"
+    },
+    {
+      "title": "PM4.0",
+      "description": "Particulate Matter 4.0 measured by the SmartCitizen device.",
+      "metric": "pm4",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pm4{device=~\"$device\"}"
+    },
+    {
+      "title": "PM10",
+      "description": "Particulate Matter 10 measured by the SmartCitizen device.",
+      "metric": "pm10",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pm10{device=~\"$device\"}"
+    },
+    {
+      "title": "Total Particle Score (TPS)",
+      "description": "Total Particle Score measured by the SmartCitizen device.",
+      "metric": "tps",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_tps{device=~\"$device\"}"
+    },
+    {
+      "title": "PN0.5",
+      "description": "Particle Number 0.5 measured by the SmartCitizen device.",
+      "metric": "pn0_5",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pn0_5{device=~\"$device\"}"
+    },
+    {
+      "title": "PN1.0",
+      "description": "Particle Number 1.0 measured by the SmartCitizen device.",
+      "metric": "pn1",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pn1{device=~\"$device\"}"
+    },
+    {
+      "title": "PN2.5",
+      "description": "Particle Number 2.5 measured by the SmartCitizen device.",
+      "metric": "pn2_5",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pn2_5{device=~\"$device\"}"
+    },
+    {
+      "title": "PN4.0",
+      "description": "Particle Number 4.0 measured by the SmartCitizen device.",
+      "metric": "pn4",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pn4{device=~\"$device\"}"
+    },
+    {
+      "title": "PN10.0",
+      "description": "Particle Number 10.0 measured by the SmartCitizen device.",
+      "metric": "pn10",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "smartcitizen_sensor_environment_pn10{device=~\"$device\"}"
+    }
+  ]
+}

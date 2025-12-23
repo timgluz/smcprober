@@ -24,17 +24,23 @@ type APIExporter struct {
 }
 
 func NewAPIExporter(config Config, provider Provider, logger *slog.Logger) *APIExporter {
-	namespace := "smartcitizen"
+	namespace := "smartcitizen" // TODO: make configurable
 	registry := metric.NewNamespacedRegistry(namespace, logger)
-	return NewAPIExporterWithRegistry(config, provider, registry, logger)
+	sensorMapping := metric.NewSensorMetricMapping()
+
+	return NewAPIExporterWithRegistry(config, provider, registry, sensorMapping, logger)
 }
 
 // NewAPIExporterWithRegistry creates a new APIExporter with an existing registry
-func NewAPIExporterWithRegistry(config Config, provider Provider, registry metric.Registry, logger *slog.Logger) *APIExporter {
+func NewAPIExporterWithRegistry(config Config, provider Provider,
+	registry metric.Registry,
+	sensorMapping *metric.SensorMetricMapping,
+	logger *slog.Logger,
+) *APIExporter {
 	// Register converters
 	converter := metric.NewCombinedConverter()
 	converter.Add(NewDeviceInfoConverter("device_info"),
-		NewDeviceSensorConverter("sensor_state"),
+		NewDeviceSensorConverter("sensor", sensorMapping),
 		NewDeviceSensorInfoConverter("sensor_info"),
 	)
 
@@ -136,7 +142,7 @@ func (e *APIExporter) processAPIData(data *UserDeviceCollection) {
 			continue
 		}
 
-		if err := e.convertDeviceSensorsToMetrics(device.Data.Sensors); err != nil {
+		if err := e.convertDeviceSensorsToMetrics(device.UUID, device.Data.Sensors); err != nil {
 			e.logger.Error("Failed to map device sensors to metrics", "error", err, "deviceID", device.ID)
 			continue
 		}
@@ -176,8 +182,13 @@ func (e *APIExporter) convertDeviceDetailToMetrics(detail DeviceDetail) error {
 	return nil
 }
 
-func (e *APIExporter) convertDeviceSensorsToMetrics(sensors []DeviceSensor) error {
+func (e *APIExporter) convertDeviceSensorsToMetrics(deviceUUID string, sensors []DeviceSensor) error {
 	for _, sensor := range sensors {
+		// Ensure sensor has device UUID set
+		if sensor.DeviceUUID == "" {
+			sensor.DeviceUUID = deviceUUID
+		}
+
 		if err := e.converter.Convert(e.registry, sensor); err != nil {
 			e.logger.Error("Error converting sensor data to metrics", "sensorID", sensor.ID, "error", err)
 			e.dataErrorCounter.WithLabelValues("mapping_error").Inc()

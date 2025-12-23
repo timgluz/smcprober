@@ -54,11 +54,15 @@ func (c *DeviceInfoConverter) Convert(registry metric.Registry, data any) error 
 }
 
 type DeviceSensorConverter struct {
-	metricName string
+	metricName    string
+	sensorMapping *metric.SensorMetricMapping
 }
 
-func NewDeviceSensorConverter(metricName string) *DeviceSensorConverter {
-	return &DeviceSensorConverter{metricName}
+func NewDeviceSensorConverter(metricName string, sensorMapping *metric.SensorMetricMapping) *DeviceSensorConverter {
+	return &DeviceSensorConverter{
+		metricName:    metricName,
+		sensorMapping: sensorMapping,
+	}
 }
 
 func (c *DeviceSensorConverter) Match(name string) bool {
@@ -70,16 +74,26 @@ func (c *DeviceSensorConverter) Convert(registry metric.Registry, data any) erro
 		return ErrInvalidDataType
 	}
 
+	// Default to the generic state metric name
+	metricName := c.metricName + "_state"
+	sensorMetric, exists := c.sensorMapping.Get(sensor.Name)
+
+	// Use the mapped metric name only if the mapping exists and has a non-empty Metric field
+	if exists && sensorMetric.Metric != "" {
+		metricName = c.metricName + "_" + sensorMetric.MetricName()
+	}
+
 	gauge := registry.GetOrCreateGaugeVec(
-		c.metricName,
+		metricName,
 		"Current sensor value",
-		[]string{"id", "uuid", "name"},
+		[]string{"id", "uuid", "name", "device"},
 	)
 
 	labels := prometheus.Labels{
-		"id":   strconv.Itoa(sensor.ID),
-		"uuid": sensor.UUID,
-		"name": sensor.Name,
+		"id":     strconv.Itoa(sensor.ID),
+		"uuid":   sensor.UUID,
+		"name":   sensor.Name,
+		"device": sensor.DeviceUUID,
 	}
 
 	gauge.With(labels).Set(sensor.Value)

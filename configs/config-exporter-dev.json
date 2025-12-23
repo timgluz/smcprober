@@ -1,0 +1,48 @@
+{
+  "dotenv_path": ".env",
+  "log_level": "INFO",
+  "smc": {
+    "endpoint": "https://api.smartcitizen.me",
+    "api_version": "v0",
+    "username_env": "SMARTCITIZEN_USERNAME",
+    "password_env": "SMARTCITIZEN_PASSWORD"
+  },
+  "sensor_mapping": {
+    "Battery SCK": { "metric": "battery", "category": "device" },
+    "Wi-Fi Antenna - RSSI": { "metric": "rssi", "category": "device" },
+    "SD Card": { "metric": "sd_card", "category": "device" },
+    "AMS AS7731 - UVA": { "metric": "uva", "category": "environment" },
+    "AMS AS7731 - UVB": { "metric": "uvb", "category": "environment" },
+    "AMS AS7731 - UVC": { "metric": "uvc", "category": "environment" },
+    "NXP MPL3115A2 - Barometric Pressure": {
+      "metric": "barometric_pressure",
+      "category": "environment"
+    },
+    "ROHM - BH1730FVC": {
+      "metric": "ambient_light",
+      "category": "environment"
+    },
+    "Sensirion SEN5X - PM1": { "metric": "pm1", "category": "environment" },
+    "Sensirion SEN5X - PM2.5": { "metric": "pm2_5", "category": "environment" },
+    "Sensirion SEN5X - PM4.0": { "metric": "pm4", "category": "environment" },
+    "Sensirion SEN5X - PM10": { "metric": "pm10", "category": "environment" },
+    "Sensirion SEN5X - PN0.5": { "metric": "pn0_5", "category": "environment" },
+    "Sensirion SEN5X - PN1.0": { "metric": "pn1", "category": "environment" },
+    "Sensirion SEN5X - PN2.5": { "metric": "pn2_5", "category": "environment" },
+    "Sensirion SEN5X - PN4.0": { "metric": "pn4", "category": "environment" },
+    "Sensirion SEN5X - PN10.0": { "metric": "pn10", "category": "environment" },
+    "Sensirion SEN5X - TPS": { "metric": "tps", "category": "environment" },
+    "Sensirion SHT31 - Humidity": {
+      "metric": "humidity",
+      "category": "environment"
+    },
+    "Sensirion SHT31 - Temperature": {
+      "metric": "temperature",
+      "category": "environment"
+    },
+    "TDK ICS43432 - Noise Level A weighting": {
+      "metric": "weighted_noise_level",
+      "category": "environment"
+    }
+  }
+}

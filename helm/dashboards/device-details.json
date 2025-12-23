@@ -1,0 +1,496 @@
+{
+  "uid": "smartcitizen-device-details",
+  "title": "SmartCitizen Device details",
+  "tags": [
+    "smartcitizen",
+    "device",
+    "sensors"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 0,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "fiscalYearStartMonth": 0,
+  "refresh": "5m",
+  "schemaVersion": 41,
+  "panels": [
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "Device Information",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "table",
+          "targets": [
+            {
+              "expr": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
+              "instant": true,
+              "range": false,
+              "format": "table",
+              "refId": "A"
+            }
+          ],
+          "title": "Device Details",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 24,
+            "x": 0,
+            "y": 1
+          }
+        },
+        {
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_device_battery{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Battery Level",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 7
+          }
+        },
+        {
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_device_rssi{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "WiFi Signal Strength",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 7
+          }
+        },
+        {
+          "type": "gauge",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_device_sd_card{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "SD Card Status",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 7
+          }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "light",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 13
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_ambient_light{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Ambient Light",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 14
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_uva{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVA",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 14
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_uvb{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVB",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 14
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_uvc{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVC",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 20
+          }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "air_quality",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pm1{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM1.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 27
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pm2_5{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM2.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 27
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pm4{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM4.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 27
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pm10{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM10",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 33
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_tps{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Particle Score (TPS)",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 33
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pn0_5{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN0.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 33
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pn1{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN1.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 39
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pn2_5{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN2.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 39
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pn4{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN4.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 39
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_pn10{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN10.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 45
+          }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "environment",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 51
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Temperature",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Humidity",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Barometric Pressure",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 52
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Weighted Noise Level",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 58
+          }
+        }
+      ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "device",
+        "label": "name of selected device",
+        "skipUrlSync": false,
+        "description": "name of selected device",
+        "query": "label_values(smartcitizen_device_info,uuid)",
+        "multi": false,
+        "allowCustomValue": true,
+        "refresh": 2,
+        "sort": 5,
+        "includeAll": false,
+        "auto": false,
+        "auto_min": "10s",
+        "auto_count": 30
+      }
+    ]
+  },
+  "annotations": {}
+}

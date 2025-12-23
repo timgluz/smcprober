@@ -3,7 +3,7 @@ package ntfy
 const (
 	DefaultNtfyEndpoint    = "https://ntfy.sh"
 	DefaultNtfyTopic       = "your-ntfy-topic"
-	DefaultNtfyTokenEnvVar = "NTFY_TOKEN"
+	DefaultNtfyTokenEnvVar = "NTFY_TOKEN" // #nosec G101 -- This is an environment variable name, not a credential
 )
 
 type Config struct {

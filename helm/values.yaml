@@ -8,7 +8,8 @@ namespace: smcprober
 replicaCount: 1
 
 # configuration of the application
-config: ""
+configJSON: ""
+configExporterJSON: ""
 # secrets for the application
 secret:
   env: ""
@@ -203,3 +204,7 @@ nodeSelector:
 tolerations: []
 
 affinity: {}
+
+grafana:
+  namespace: monitoring
+  folder: SmartCitizen
