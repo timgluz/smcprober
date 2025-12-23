@@ -73,11 +73,15 @@ tasks:
     cmds:
       - |
         helm template dev ./helm --debug \
+          --namespace {{.SMC_NAMESPACE}} \
           --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
           --set serviceMonitor.enabled=true \
+          --set alertmanager.enabled=true \
+          --set alertmanager.webhooks.default="{{.NTFY_DEFAULT_WEBHOOK_URL}}" \
+          --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}" \
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
 

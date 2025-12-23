@@ -1,3 +1,4 @@
+{{- if .Values.alertmanager.enabled }}
 apiVersion: monitoring.coreos.com/v1alpha1
 kind: AlertmanagerConfig
 metadata:
@@ -12,13 +13,6 @@ spec:
     repeatInterval: {{ .Values.alertmanager.repeatInterval | default "12h" }}
     # Child routes for specific alerts
     routes:
-    - receiver: 'on-call-receiver'
-      matchers:
-      - name: notify
-        value: team_on_call
-        matchType: '='
-      groupWait: 30s
-      repeatInterval: 5m
     - receiver: 'critical-receiver'
       matchers:
       - name: severity
@@ -36,9 +30,6 @@ spec:
     webhookConfigs:
     - url: {{ .Values.alertmanager.webhooks.critical | quote }}
       sendResolved: true
-  - name: 'on-call-receiver'
-    webhookConfigs:
-    - url: {{ .Values.alertmanager.webhooks.on_call | quote }}
-      sendResolved: true
-
-
+{{- else }}
+# Alertmanager is disabled; no AlertmanagerConfig will be created.
+{{- end }}
