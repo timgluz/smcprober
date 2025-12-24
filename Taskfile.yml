@@ -87,7 +87,12 @@ tasks:
 
   "build:docker":
     cmds:
-      - "{{.DOCKER_BIN}} build -t smcprober:latest -f Dockerfile ."
+      - |
+        {{.DOCKER_BIN}} build \
+          --platform linux/amd64,linux/arm64 \
+          -t smcprober:latest \
+          -t smcprober:{{.VERSION}} \
+          -f Dockerfile .
 
   "run:docker":
     cmds:
