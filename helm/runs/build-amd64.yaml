@@ -1,0 +1,37 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: build-amd64-
+  namespace: smc-cicd
+spec:
+  pipelineRef:
+    name: build-image-pipeline
+  params:
+    - name: repo
+      value: timgluz/smcprober
+    - name: image
+      value: tauho/smcprober:latest
+    - name: platform
+      value: linux/amd64
+
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+    - name: dockerconfig
+      secret:
+        secretName: docker-config
+  taskRunSpecs:
+    - pipelineTaskName: build-docker
+      podTemplate:
+        nodeSelector:
+          kubernetes.io/arch: amd64
+    - pipelineTaskName: build-docker
+      podTemplate:
+        nodeSelector:
+          kubernetes.io/arch: amd64

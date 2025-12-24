@@ -34,6 +34,24 @@ kubectl create secret generic github-token \
   -n smc-cicd
 ```
 
+### Trigger clone-repo task
+
+- deploy task
+
+```bash
+k apply -f helm/workflows/clone-repo-task.yaml
+```
+
+- trigger taskrun
+
+```bash
+tkn task start clone-repo \
+  --param repo=timgluz/smcprober \
+  --workspace name=source,emptyDir="" \
+  --showlog \
+  -n smc-cicd
+```
+
 ### Trigger checkout-pr task
 
 - deploy task
@@ -51,4 +69,46 @@ tkn task start checkout-pr \
   --workspace name=source,emptyDir="" \
   --showlog \
   -n smc-cicd
+```
+
+### Trigger build pipeline
+
+- create Dockerconfig secret
+
+```bash
+DOCKER_PASSWORD=<your_docker_hub_password>
+
+kubectl create secret docker-registry docker-config -n smc-cicd \
+  --docker-username=tauho \
+  --docker-password=$DOCKER_PASSWORD \
+  --docker-server=docker.io
+```
+
+- deploy pipeline and related resources
+
+```bash
+k apply -f helm/workflows/
+```
+
+- trigger pipelinerun
+
+```bash
+k create -f helm/runs/build-amd64.yaml
+k create -f helm/runs/build-arm64.yaml
+k create -f helm/runs/build-manifest.yaml
+```
+
+- check pipelinerun logs
+
+```bash
+tkn pipelinerun logs build-multiarch-xxxxx -f -n smc-cicd
+
+# Check detailed status
+tkn pipelinerun describe build-multiarch-xxxxx -n smc-cicd
+```
+
+- access Tekton dashboard (optional)
+
+```bash
+task expose:tekton
 ```

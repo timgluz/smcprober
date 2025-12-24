@@ -1,0 +1,48 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-image-pipeline
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      type: string
+      default: timgluz/smcprober
+    - name: revision
+      type: string
+      default: main
+    - name: image
+      type: string
+      default: tauho/smcprober:latest
+    - name: platform
+      type: string
+      default: linux/amd64
+  workspaces:
+    - name: source
+    - name: dockerconfig
+  tasks:
+    - name: fetch-source
+      taskRef:
+        name: clone-repo-task
+      workspaces:
+        - name: source
+          workspace: source
+      params:
+        - name: repo
+          value: $(params.repo)
+    - name: build-docker
+      runAfter:
+        - fetch-source
+      retries: 3
+      taskRef:
+        name: docker-build-task
+      workspaces:
+        - name: source
+          workspace: source
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: image
+          value: $(params.image)
+        - name: platform
+          value: $(params.platform)

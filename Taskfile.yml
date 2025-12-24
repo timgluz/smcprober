@@ -146,3 +146,6 @@ tasks:
   "expose:service":
     cmds:
       - "kubectl port-forward -n {{.SMC_NAMESPACE}} svc/dev-smcprober 8080:80"
+  "expose:tekton":
+    cmds:
+      - "kubectl port-forward -n tekton-pipelines service/tekton-dashboard 9097:9097"

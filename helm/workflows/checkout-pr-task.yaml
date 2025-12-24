@@ -31,4 +31,4 @@ spec:
             secretKeyRef:
               name: github-token
               key: token
-      timeout: "3m"
+      timeout: "1m"
