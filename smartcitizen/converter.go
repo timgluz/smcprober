@@ -74,12 +74,12 @@ func (c *DeviceStateConverter) Convert(registry metric.Registry, data any) error
 	gauge := registry.GetOrCreateGaugeVec(
 		c.metricName+"_has_published",
 		"Indicates whether the device has published data (1) or not (0)",
-		[]string{"uuid", "name"},
+		[]string{"device", "name"},
 	)
 
 	labels := prometheus.Labels{
-		"uuid": device.UUID,
-		"name": device.Name,
+		"device": device.UUID,
+		"name":   device.Name,
 	}
 
 	gauge.With(labels).Set(device.StateValue())
@@ -119,12 +119,12 @@ func (c *DeviceSensorConverter) Convert(registry metric.Registry, data any) erro
 	gauge := registry.GetOrCreateGaugeVec(
 		metricName,
 		"Current sensor value",
-		[]string{"id", "uuid", "name", "device"},
+		[]string{"id", "sensor", "name", "device"},
 	)
 
 	labels := prometheus.Labels{
 		"id":     strconv.Itoa(sensor.ID),
-		"uuid":   sensor.UUID,
+		"sensor": sensor.UUID,
 		"name":   sensor.Name,
 		"device": sensor.DeviceUUID,
 	}
@@ -153,7 +153,7 @@ func (c *DeviceSensorInfoConverter) Convert(registry metric.Registry, data any) 
 
 	labels := prometheus.Labels{
 		"id":          strconv.Itoa(sensor.ID),
-		"uuid":        sensor.UUID,
+		"sensor":      sensor.UUID,
 		"name":        sensor.Name,
 		"unit":        sensor.Unit,
 		"description": sensor.Description,
@@ -162,7 +162,7 @@ func (c *DeviceSensorInfoConverter) Convert(registry metric.Registry, data any) 
 	gauge := registry.GetOrCreateGaugeVec(
 		c.metricName,
 		"Static information about Smart Citizen device sensors",
-		[]string{"id", "uuid", "name", "unit", "description"},
+		[]string{"id", "sensor", "name", "unit", "description"},
 	)
 
 	gauge.With(labels).Set(1)
