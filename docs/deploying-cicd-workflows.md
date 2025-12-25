@@ -1,10 +1,12 @@
 # Deploying CI/CD Workflows
 
-This guide explains how to deploy and run Tekton pipelines for building multi-architecture Docker images of the smcprober project.
+This guide explains how to deploy and run Tekton pipelines for building multi-architecture Docker images of the
+smcprober project.
 
 ## Overview
 
 The CI/CD workflows use Tekton pipelines to:
+
 - Clone the repository from GitHub
 - Build Docker images for multiple architectures (amd64, arm64)
 - Push images to Docker Hub
@@ -13,6 +15,7 @@ The CI/CD workflows use Tekton pipelines to:
 ## Prerequisites
 
 Before starting, ensure you have:
+
 - `kubectl` CLI installed and configured with access to your Kubernetes cluster
 - `tkn` (Tekton CLI) installed
 - Access to create resources in the cluster
@@ -134,6 +137,7 @@ tkn pipelinerun logs <pipelinerun-name> -f -n smc-cicd
 ```
 
 Example:
+
 ```bash
 tkn pipelinerun logs build-multiarch-image-run-abc123 -f -n smc-cicd
 ```
