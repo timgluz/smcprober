@@ -9,7 +9,8 @@ vars:
   DOCKER_BIN: nerdctl
   DOCKER_HOST: docker.io
   SMC_NAMESPACE: smcprober
-  VERSION: "v0.0.2-dev"
+  #VERSION: "v0.0.2-dev"
+  VERSION: "latest"
 
 tasks:
   default:
@@ -77,6 +78,7 @@ tasks:
 
   "template:helm":
     cmds:
+      - task: generate:dashboards
       - |
         helm template dev ./helm --debug \
           --namespace {{.SMC_NAMESPACE}} \

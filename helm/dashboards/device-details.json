@@ -109,12 +109,12 @@
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_device_sd_card{device=~\"$device\"}",
+              "expr": "smartcitizen_device_state_has_published{device=~\"$device\"}",
               "format": "time_series",
               "refId": "A"
             }
           ],
-          "title": "SD Card Status",
+          "title": "Data ",
           "transparent": false,
           "gridPos": {
             "h": 6,
