@@ -69,6 +69,11 @@ tasks:
     cmds:
       - golangci-lint run --fix ./...
 
+  "lint:markdown":
+    desc: Lint markdown files
+    cmds:
+      - markdownlint-cli2 README.md docs/*.md
+
   "template:helm":
     cmds:
       - |
