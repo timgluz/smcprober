@@ -199,7 +199,7 @@ volumeMounts:
 
 nodeSelector:
   # remove if we have multi-arch support
-  kubernetes.io/arch: amd64
+  # kubernetes.io/arch: amd64
 
 tolerations: []
 

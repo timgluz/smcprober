@@ -1,0 +1,67 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: build-multiarch-image
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      type: string
+      default: timgluz/smcprober
+    - name: revision
+      type: string
+      default: main
+    - name: image
+      type: string
+      default: tauho/smcprober:latest
+  workspaces:
+    - name: dockerconfig
+  tasks:
+    - name: build-amd64
+      retries: 3
+      taskRef:
+        name: git-clone-and-build
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: repo
+          value: $(params.repo)
+        - name: revision
+          value: $(params.revision)
+        - name: image
+          value: $(params.image)
+        - name: platform
+          value: linux/amd64
+    - name: build-arm64
+      retries: 3
+      taskRef:
+        name: git-clone-and-build
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: repo
+          value: $(params.repo)
+        - name: revision
+          value: $(params.revision)
+        - name: image
+          value: $(params.image)
+        - name: platform
+          value: linux/arm64
+    - name: create-manifest
+      runAfter:
+        - build-amd64
+        - build-arm64
+      taskRef:
+        name: create-docker-manifest
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: image
+          value: $(params.image)
+        - name: images
+          value:
+            - $(params.image)-amd64
+            - $(params.image)-arm64
