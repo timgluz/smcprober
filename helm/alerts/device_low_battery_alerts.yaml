@@ -1,6 +1,6 @@
 # yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
 groups:
-  - name: smartcitizen_device_alerts
+  - name: smartcitizen_device_battery_alerts
     rules:
       - alert: SmartCitizenDeviceLowBattery
         expr: |-

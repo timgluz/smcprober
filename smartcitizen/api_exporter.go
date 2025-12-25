@@ -39,6 +39,7 @@ func NewAPIExporterWithRegistry(config Config, provider Provider,
 	// Register converters
 	converter := metric.NewCombinedConverter()
 	converter.Add(NewDeviceInfoConverter("device_info"),
+		NewDeviceStateConverter("device_state"),
 		NewDeviceSensorConverter("sensor", sensorMapping),
 		NewDeviceSensorInfoConverter("sensor_info"),
 	)

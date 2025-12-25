@@ -53,6 +53,39 @@ func (c *DeviceInfoConverter) Convert(registry metric.Registry, data any) error 
 	return nil
 }
 
+type DeviceStateConverter struct {
+	metricName string
+}
+
+func NewDeviceStateConverter(metricName string) *DeviceStateConverter {
+	return &DeviceStateConverter{metricName}
+}
+
+func (c *DeviceStateConverter) Match(name string) bool {
+	return name == DeviceDetailType
+}
+
+func (c *DeviceStateConverter) Convert(registry metric.Registry, data any) error {
+	device, ok := data.(DeviceDetail)
+	if !ok {
+		return ErrInvalidDataType
+	}
+
+	gauge := registry.GetOrCreateGaugeVec(
+		c.metricName+"_has_published",
+		"Indicates whether the device has published data (1) or not (0)",
+		[]string{"uuid", "name"},
+	)
+
+	labels := prometheus.Labels{
+		"uuid": device.UUID,
+		"name": device.Name,
+	}
+
+	gauge.With(labels).Set(device.StateValue())
+	return nil
+}
+
 type DeviceSensorConverter struct {
 	metricName    string
 	sensorMapping *metric.SensorMetricMapping

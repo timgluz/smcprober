@@ -1,0 +1,15 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_device_state_alerts
+    rules:
+      - alert: SmartCitizenPublishingStopped
+        expr: |
+          smartcitizen_device_state_has_published == 0
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "Device {{ $labels.device }} has stopped publishing data"
+          description: |-
+            The device {{ $labels.device }} has not published any data in the last 1 hour.
+            Please check the device connectivity and status to ensure it is functioning properly.
