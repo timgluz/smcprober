@@ -69,6 +69,11 @@ tasks:
     cmds:
       - golangci-lint run --fix ./...
 
+  "lint:markdown":
+    desc: Lint markdown files
+    cmds:
+      - markdownlint-cli2 README.md docs/*.md
+
   "template:helm":
     cmds:
       - |
@@ -87,7 +92,11 @@ tasks:
 
   "build:docker":
     cmds:
-      - "{{.DOCKER_BIN}} build -t smcprober:latest -f Dockerfile ."
+      - |
+        {{.DOCKER_BIN}} build \
+          -t smcprober:latest \
+          -t smcprober:{{.VERSION}} \
+          -f Dockerfile .
 
   "run:docker":
     cmds:
@@ -141,3 +150,6 @@ tasks:
   "expose:service":
     cmds:
       - "kubectl port-forward -n {{.SMC_NAMESPACE}} svc/dev-smcprober 8080:80"
+  "expose:tekton":
+    cmds:
+      - "kubectl port-forward -n tekton-pipelines service/tekton-dashboard 9097:9097"

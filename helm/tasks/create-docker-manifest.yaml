@@ -1,0 +1,49 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: create-docker-manifest
+  namespace: smc-cicd
+spec:
+  params:
+    - name: image
+      type: string
+      description: "Name of the multi-arch image to create"
+    - name: images
+      type: array
+      description: "List of arch-specific images"
+  workspaces:
+    - name: dockerconfig
+  steps:
+    - name: create-manifest
+      image: quay.io/buildah/stable:latest
+      imagePullPolicy: IfNotPresent
+      args:
+        - $(params.images[*])
+      script: |
+        #!/bin/bash
+        set -e
+        IMAGE="$(params.image)"
+
+        echo "Creating manifest ${IMAGE}"
+        buildah manifest create "${IMAGE}"
+
+        # Add each arch-specific image to manifest
+        for img in "$@" ; do
+          echo "Adding ${img} to manifest"
+          buildah manifest add "${IMAGE}" docker://${img}
+        done
+
+        echo "Pushing manifest $(params.image)"
+        buildah manifest push \
+          --authfile /workspace/dockerconfig/.dockerconfigjson \
+          --all \
+          ${IMAGE} \
+          docker://${IMAGE}
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}

@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/redhat-developer/vscode-tekton/refs/heads/main/scheme/tekton.dev/v1_Task.json
+# This Task builds docker image for specified architecture
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone-and-build
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      type: string
+      description: git repository or URL to clone.
+    - name: revision
+      type: string
+      description: The git revision (branch, tag, commit) to checkout.
+      default: main
+    - name: image
+      type: string
+      description: The name of the Docker image to build.
+    - name: platform
+      type: string
+      description: The target platform for the Docker image (e.g., linux/amd64, linux/arm64).
+  workspaces:
+    - name: dockerconfig
+      description: The workspace containing Docker configuration (e.g., for authentication).
+  volumes:
+    - name: varlibcontainers
+      emptyDir: {}
+  steps:
+    - name: clone-repo
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Cloning repository $(params.repo) from $(params.revision)"
+        git clone --depth 1 --branch $(params.revision) \
+          https://github.com/$(params.repo).git /workspace/source
+      timeout: "3m"
+    - name: build-and-push
+      image: quay.io/buildah/stable:latest
+      imagePullPolicy: IfNotPresent
+      script: |
+        #!/bin/bash
+        set -e
+        cd /workspace/source
+
+        ARCH=$(echo $(params.platform) | cut -d'/' -f2)
+        IMAGE_WITH_ARCH=$(params.image)-${ARCH}
+
+        echo "Building for $(params.platform)"
+        buildah build \
+          --platform $(params.platform) \
+          --tag ${IMAGE_WITH_ARCH} \
+          -f Dockerfile \
+          .
+
+        echo "Pushing ${IMAGE_WITH_ARCH}"
+        buildah push \
+          --authfile /workspace/dockerconfig/.dockerconfigjson \
+          ${IMAGE_WITH_ARCH}
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: varlibcontainers
+          mountPath: /var/lib/containers
