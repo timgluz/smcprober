@@ -1,114 +1,178 @@
-# Deploying workflows for CI/CD
+# Deploying CI/CD Workflows
 
-DRAFT
+This guide explains how to deploy and run Tekton pipelines for building multi-architecture Docker images of the smcprober project.
 
-## Deploying Workflows
+## Overview
 
-Create github token with repo and workflow permissions.
-For checking out repos with gh CLI, you need the contents: `read` permission (for public repos) or contents: `read` + `metadata: read` (for private repos).
+The CI/CD workflows use Tekton pipelines to:
+- Clone the repository from GitHub
+- Build Docker images for multiple architectures (amd64, arm64)
+- Push images to Docker Hub
+- Create multi-architecture manifests
 
-```markdown
-Go to GitHub
-Settings → Developer settings → Personal access tokens → Fine-grained tokens
+## Prerequisites
 
-Repository access: Choose specific repos or all repos
-Permissions:
-✓ Contents: Read
-✓ Metadata: Read (automatically included)
-✓ Pull requests: Read (if you need pr checkout specifically)
-```
+Before starting, ensure you have:
+- `kubectl` CLI installed and configured with access to your Kubernetes cluster
+- `tkn` (Tekton CLI) installed
+- Access to create resources in the cluster
+- A GitHub personal access token with appropriate permissions
+- A Docker Hub account and credentials
+
+## Initial Setup
+
+### 1. Create GitHub Personal Access Token
+
+Create a fine-grained personal access token with the following permissions:
+
+1. Go to GitHub: Settings → Developer settings → Personal access tokens → Fine-grained tokens
+2. Click "Generate new token"
+3. Configure the token:
+   - **Repository access**: Choose specific repos or all repos
+   - **Permissions**:
+     - Contents: Read
+     - Metadata: Read (automatically included)
+     - Pull requests: Read (if you need PR checkout functionality)
+
+Export the token as an environment variable:
 
 ```bash
 export GH_TOKEN=<your_github_token>
 ```
 
-Create namespace and create secret with the token
+### 2. Create Kubernetes Namespace
 
 ```bash
-# Create namespace
 kubectl create namespace smc-cicd
+```
 
-# Create GitHub token secret
+### 3. Create GitHub Token Secret
+
+```bash
 kubectl create secret generic github-token \
   --from-literal=token=$GH_TOKEN \
   -n smc-cicd
 ```
 
-### Trigger clone-repo task
+### 4. Create Docker Registry Secret
 
-- deploy task
-
-```bash
-k apply -f helm/workflows/clone-repo-task.yaml
-```
-
-- trigger taskrun
+This secret is required for pushing images to Docker Hub:
 
 ```bash
-tkn task start clone-repo \
-  --param repo=timgluz/smcprober \
-  --workspace name=source,emptyDir="" \
-  --showlog \
-  -n smc-cicd
-```
+export DOCKER_PASSWORD=<your_docker_hub_password>
 
-### Trigger checkout-pr task
-
-- deploy task
-
-```bash
-k apply -f helm/workflows/checkout-pr-task.yaml
-```
-
-- trigger taskrun
-
-```bash
-tkn task start checkout-pr \
-  --param repo=timgluz/smcprober \
-  --param pr-number=42 \
-  --workspace name=source,emptyDir="" \
-  --showlog \
-  -n smc-cicd
-```
-
-### Trigger build pipeline
-
-- create Dockerconfig secret
-
-```bash
-DOCKER_PASSWORD=<your_docker_hub_password>
-
-kubectl create secret docker-registry docker-config -n smc-cicd \
+kubectl create secret docker-registry docker-config \
   --docker-username=tauho \
   --docker-password=$DOCKER_PASSWORD \
-  --docker-server=docker.io
+  --docker-server=docker.io \
+  -n smc-cicd
 ```
 
-- deploy pipeline and related resources
+## Deploying Tasks and Pipelines
+
+### Deploy Individual Task
+
+To deploy a single task (e.g., git-clone-and-build):
 
 ```bash
-k apply -f helm/workflows/
+kubectl apply -f helm/tasks/git-clone-and-build.yaml -n smc-cicd
 ```
 
-- trigger pipelinerun
+### Deploy All Tasks
+
+To deploy all available tasks:
 
 ```bash
-k create -f helm/runs/build-amd64.yaml
-k create -f helm/runs/build-arm64.yaml
-k create -f helm/runs/build-manifest.yaml
+kubectl apply -f helm/tasks/ -n smc-cicd
 ```
 
-- check pipelinerun logs
+### Deploy the Build Pipeline
 
 ```bash
-tkn pipelinerun logs build-multiarch-xxxxx -f -n smc-cicd
-
-# Check detailed status
-tkn pipelinerun describe build-multiarch-xxxxx -n smc-cicd
+kubectl apply -f helm/pipelines/build-multiarch-pipeline.yaml -n smc-cicd
 ```
 
-- access Tekton dashboard (optional)
+## Running Workflows
+
+### Option 1: Run Individual Clone-and-Build Task
+
+To run a single architecture build:
+
+```bash
+tkn task start git-clone-and-build \
+  --param repo=timgluz/smcprober \
+  --param revision=main \
+  --param image=tauho/smcprober:latest-dev-amd64 \
+  --param platform=linux/amd64 \
+  --workspace name=dockerconfig,secret=docker-config \
+  --showlog \
+  -n smc-cicd
+```
+
+### Option 2: Run Multi-Architecture Build Pipeline
+
+To build for both amd64 and arm64 architectures:
+
+```bash
+kubectl create -f helm/runs/start-multiarch-build.yaml -n smc-cicd
+```
+
+## Monitoring Pipeline Runs
+
+### List Recent Pipeline Runs
+
+```bash
+tkn pipelinerun list -n smc-cicd
+```
+
+### View Pipeline Run Logs
+
+Follow logs in real-time (replace `<pipelinerun-name>` with the actual name from the list command):
+
+```bash
+tkn pipelinerun logs <pipelinerun-name> -f -n smc-cicd
+```
+
+Example:
+```bash
+tkn pipelinerun logs build-multiarch-image-run-abc123 -f -n smc-cicd
+```
+
+### Check Detailed Pipeline Status
+
+```bash
+tkn pipelinerun describe <pipelinerun-name> -n smc-cicd
+```
+
+### Access Tekton Dashboard (Optional)
+
+If you have a Taskfile task configured to expose the Tekton dashboard:
 
 ```bash
 task expose:tekton
+```
+
+This will make the Tekton web UI accessible for visual monitoring of pipeline runs.
+
+## Troubleshooting
+
+### View Failed Task Logs
+
+```bash
+kubectl logs <pod-name> -n smc-cicd
+```
+
+### Check Task Status
+
+```bash
+tkn taskrun list -n smc-cicd
+tkn taskrun describe <taskrun-name> -n smc-cicd
+```
+
+### Verify Secrets
+
+```bash
+kubectl get secrets -n smc-cicd
+kubectl describe secret github-token -n smc-cicd
+kubectl describe secret docker-config -n smc-cicd
 ```
