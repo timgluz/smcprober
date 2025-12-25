@@ -92,7 +92,7 @@ kubectl apply -f helm/tasks/ -n smc-cicd
 ### Deploy the Build Pipeline
 
 ```bash
-kubectl apply -f helm/pipelines/build-multiarch-pipeline.yaml -n smc-cicd
+kubectl apply -f helm/pipelines/build-multiarch-image.yaml -n smc-cicd
 ```
 
 ## Running Workflows
