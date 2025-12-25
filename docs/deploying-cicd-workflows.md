@@ -65,7 +65,7 @@ This secret is required for pushing images to Docker Hub:
 export DOCKER_PASSWORD=<your_docker_hub_password>
 
 kubectl create secret docker-registry docker-config \
-  --docker-username=tauho \
+  --docker-username=<your_docker_hub_username> \
   --docker-password=$DOCKER_PASSWORD \
   --docker-server=docker.io \
   -n smc-cicd
