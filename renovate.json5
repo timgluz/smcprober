@@ -1,240 +1,116 @@
 {
-  // ========================================================================
-  // RenovateBot Configuration for smcprober
-  // ========================================================================
-  // This configuration automates dependency updates for Go modules, Docker
-  // images, and Helm charts. It groups updates logically, schedules them for
-  // Monday mornings, and enables auto-merge for safe updates.
-  //
-  // Documentation: https://docs.renovatebot.com/configuration-options/
-  // ========================================================================
-
-  // ========================================================================
-  // Base Configuration
-  // ========================================================================
-  // Extends the recommended Renovate preset which includes sensible defaults
-  // for most projects. This includes automatic detection of package managers,
-  // reasonable update strategies, and PR management settings.
   extends: [
-    "config:recommended"
+    'config:recommended',
   ],
-
-  // Set timezone for all schedule-based operations
-  // This ensures predictable update times regardless of bot location
-  timezone: "UTC",
-
-  // Labels automatically added to all Renovate PRs
-  // These help with filtering and automation in GitHub
+  timezone: 'UTC',
   labels: [
-    "dependencies",
-    "renovate"
+    'dependencies',
+    'renovate',
   ],
-
-  // Assign all Renovate PRs to this user for review
   assignees: [
-    "timgluz"
+    'timgluz',
   ],
-
-  // ========================================================================
-  // Rate Limiting
-  // ========================================================================
-  // Control the rate of PR creation to avoid overwhelming the repository
-  
-  // Maximum number of concurrent open PRs from Renovate
-  // Helps prevent notification overload and allows focused review
   prConcurrentLimit: 5,
-
-  // Maximum number of PRs created per hour
-  // Further throttles updates to prevent spam during active periods
   prHourlyLimit: 2,
-
-  // ========================================================================
-  // Dependency Dashboard
-  // ========================================================================
-  // Creates a GitHub issue that provides visibility into all pending updates,
-  // rejected updates, and allows manual triggering of updates
   dependencyDashboard: true,
-
-  // ========================================================================
-  // Security & Vulnerability Alerts
-  // ========================================================================
-  // Enable vulnerability detection and immediate security updates
   vulnerabilityAlerts: {
     enabled: true,
     labels: [
-      "security"
+      'security',
     ],
     assignees: [
-      "timgluz"
-    ]
+      'timgluz',
+    ],
   },
-
-  // ========================================================================
-  // Docker Configuration
-  // ========================================================================
-  // Pin Docker image digests to ensure reproducible builds
-  // This prevents unexpected changes when tags are updated/moved
-  docker: {
-    pinDigests: true
-  },
-
-  // ========================================================================
-  // PR Configuration
-  // ========================================================================
-  // Enable semantic commit messages for all PRs
-  // This ensures commit messages follow conventional commit format
-  semanticCommits: "enabled",
-
-  // Rebase PRs when they fall behind the base branch
-  // This keeps PRs up-to-date and prevents merge conflicts
-  rebaseWhen: "behind-base-branch",
-
-  // ========================================================================
-  // Go-Specific Configuration
-  // ========================================================================
-  // Run 'go mod tidy' after updating Go dependencies
-  // This ensures go.mod and go.sum are properly maintained
+  semanticCommits: 'enabled',
+  rebaseWhen: 'behind-base-branch',
   postUpdateOptions: [
-    "gomodTidy"
+    'gomodTidy',
   ],
-
-  // ========================================================================
-  // Package Rules
-  // ========================================================================
-  // Define specific rules for different types of dependencies
-  // Rules are processed in order, with later rules overriding earlier ones
   packageRules: [
-    // =====================================================================
-    // Global Scheduling Rule
-    // =====================================================================
-    // Schedule all dependency updates for Monday mornings before 10am UTC
-    // This provides a predictable update cadence and allows team review
-    // at the start of the week
     {
-      matchPackagePatterns: [
-        "*"
+      matchCategories: [
+        'docker',
       ],
-      schedule: [
-        "before 10am on monday"
-      ]
+      pinDigests: true,
     },
-
-    // =====================================================================
-    // Security Updates - Immediate Processing
-    // =====================================================================
-    // Override schedule for security updates to create them immediately
-    // Security fixes should not wait for the weekly schedule
+    {
+      schedule: [
+        'before 10am on monday',
+      ],
+      matchPackageNames: [
+        '*',
+      ],
+    },
     {
       matchUpdateTypes: [
-        "pin",
-        "digest",
-        "patch"
+        'pin',
+        'digest',
+        'patch',
       ],
-      matchPackagePatterns: [
-        "*"
-      ],
-      // When a vulnerability is detected, create PR at any time
       schedule: [
-        "at any time"
+        'at any time',
       ],
-      // Add security label for visibility
       labels: [
-        "dependencies",
-        "renovate",
-        "security"
-      ]
+        'dependencies',
+        'renovate',
+        'security',
+      ],
+      matchPackageNames: [
+        '*',
+      ],
     },
-
-    // =====================================================================
-    // Go Module Dependencies
-    // =====================================================================
-    // Group all Go module updates into a single PR for easier review
-    // Go projects typically have many interdependent modules
     {
       matchManagers: [
-        "gomod"
+        'gomod',
       ],
-      groupName: "Go module dependencies",
-      // Use semantic commit with 'deps' scope
-      semanticCommitType: "chore",
-      semanticCommitScope: "deps",
-      // Include release notes and changelogs in PR description
+      groupName: 'Go module dependencies',
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'deps',
       prBodyNotes: [
-        "This PR updates Go module dependencies.",
-        "All changes are grouped together for efficient review."
-      ]
+        'This PR updates Go module dependencies.',
+        'All changes are grouped together for efficient review.',
+      ],
     },
-
-    // =====================================================================
-    // Docker Dependencies
-    // =====================================================================
-    // Group all Docker image updates together
-    // This includes base images in Dockerfiles
     {
       matchManagers: [
-        "dockerfile"
+        'dockerfile',
       ],
-      groupName: "Docker dependencies",
-      // Use semantic commit with 'docker' scope
-      semanticCommitType: "chore",
-      semanticCommitScope: "docker",
-      // Add Docker-specific notes
+      groupName: 'Docker dependencies',
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'docker',
       prBodyNotes: [
-        "This PR updates Docker base images.",
-        "Digests are pinned for reproducible builds."
-      ]
+        'This PR updates Docker base images.',
+        'Digests are pinned for reproducible builds.',
+      ],
     },
-
-    // =====================================================================
-    // Helm Chart Dependencies
-    // =====================================================================
-    // Group all Helm chart dependencies together
-    // This includes both the chart itself and any chart dependencies
     {
       matchManagers: [
-        "helm-values",
-        "helmv3"
+        'helm-values',
+        'helmv3',
       ],
-      groupName: "Helm dependencies",
-      // Use semantic commit with 'helm' scope
-      semanticCommitType: "chore",
-      semanticCommitScope: "helm",
-      // Add Helm-specific notes
+      groupName: 'Helm dependencies',
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'helm',
       prBodyNotes: [
-        "This PR updates Helm chart dependencies.",
-        "Test the chart in a dev environment before merging."
-      ]
+        'This PR updates Helm chart dependencies.',
+        'Test the chart in a dev environment before merging.',
+      ],
     },
-
-    // =====================================================================
-    // Auto-merge for Development Dependencies
-    // =====================================================================
-    // Automatically merge minor and patch updates for development dependencies
-    // This reduces manual review burden for low-risk updates
-    // Major updates still require manual review
     {
       matchDepTypes: [
-        "devDependencies"
+        'devDependencies',
       ],
       matchUpdateTypes: [
-        "minor",
-        "patch"
+        'minor',
+        'patch',
       ],
       automerge: true,
-      // Set to true to merge without waiting for status checks
-      // Only enable if you have comprehensive CI/CD
-      automergeType: "pr",
-      // Add note explaining auto-merge
+      automergeType: 'pr',
       prBodyNotes: [
-        "⚡ This PR is eligible for auto-merge (minor/patch dev dependency)."
-      ]
-    }
+        '⚡ This PR is eligible for auto-merge (minor/patch dev dependency).',
+      ],
+    },
   ],
-
-  // ========================================================================
-  // PR Title Template
-  // ========================================================================
-  // Customize PR titles to be more informative
-  // Available placeholders: https://docs.renovatebot.com/configuration-options/#prtitle
-  prTitle: "{{{semanticPrefix}}}update {{depName}} to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}v{{{newMajor}}}{{else}}{{#if isSingleVersion}}v{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}{{/if}}{{/if}}"
+  prTitle: '{{{semanticPrefix}}}update {{depName}} to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}v{{{newMajor}}}{{else}}{{#if isSingleVersion}}v{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}{{/if}}{{/if}}',
 }
