@@ -11,10 +11,10 @@ tests:
         values: "25+0x10"
     alert_rule_test:
       - eval_time: 5m
-        alertname: DeviceLowBattery
+        alertname: SmartCitizenDeviceLowBattery
         exp_alerts: []
       - eval_time: 10m
-        alertname: DeviceLowBattery
+        alertname: SmartCitizenDeviceLowBattery
         exp_alerts: []
   - interval: 1m
     name: TestDeviceLowBattery_WarningAlert
@@ -23,10 +23,10 @@ tests:
         values: "15+0x10"
     alert_rule_test:
       - eval_time: 5m
-        alertname: DeviceLowBattery
+        alertname: SmartCitizenDeviceLowBattery
         exp_alerts: []
       - eval_time: 10m
-        alertname: DeviceLowBattery
+        alertname: SmartCitizenDeviceLowBattery
         exp_alerts:
           - exp_labels:
               severity: warning
@@ -44,10 +44,10 @@ tests:
         values: "3+0x10"
     alert_rule_test:
       - eval_time: 3m
-        alertname: DeviceCriticalBattery
+        alertname: SmartCitizenDeviceCriticalBattery
         exp_alerts: []
       - eval_time: 5m
-        alertname: DeviceCriticalBattery
+        alertname: SmartCitizenDeviceCriticalBattery
         exp_alerts:
           - exp_labels:
               severity: critical

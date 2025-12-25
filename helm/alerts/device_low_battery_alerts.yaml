@@ -2,10 +2,10 @@
 groups:
   - name: smartcitizen_device_alerts
     rules:
-      - alert: DeviceLowBattery
+      - alert: SmartCitizenDeviceLowBattery
         expr: |-
           smartcitizen_sensor_device_battery < 20
-            and smartcitizen_sensor_device_battery >= 5
+            and smartcitizen_sensor_device_battery > 10
         for: 10m
         labels:
           severity: warning
@@ -14,8 +14,8 @@ groups:
           description: |-
             The battery level of device {{ $labels.device }} is at {{ $value }}%.
             Please recharge or replace the battery soon to ensure continued operation.
-      - alert: DeviceCriticalBattery
-        expr: smartcitizen_sensor_device_battery < 5
+      - alert: SmartCitizenDeviceCriticalBattery
+        expr: smartcitizen_sensor_device_battery <= 10
         for: 5m
         labels:
           severity: critical

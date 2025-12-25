@@ -9,7 +9,19 @@
       "type": "table",
       "query": "group by (name, uuid, description) (smartcitizen_device_info{uuid=~\"$device\"})",
       "instant": true,
-      "span": 24
+      "span": 12,
+      "height": 6
+    },
+    {
+      "title": "Device Alerts",
+      "description": "Alerts from the SmartCitizen device.",
+      "metric": "device_alerts",
+      "panel": "device",
+      "type": "table",
+      "query": "group by (alertname,alertstate,severity) (ALERTS{device=~\"$device\"})",
+      "instant": true,
+      "span": 12,
+      "height": 6
     },
     {
       "title": "Battery Level",
