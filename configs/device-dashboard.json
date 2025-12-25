@@ -40,12 +40,12 @@
       "query": "smartcitizen_sensor_device_rssi{device=~\"$device\"}"
     },
     {
-      "title": "SD Card Status",
-      "description": "SD Card status of the SmartCitizen device.",
-      "metric": "sd_card",
+      "title": "Data ",
+      "description": "Indicates whether the SmartCitizen device has published data recently.",
+      "metric": "has_published",
       "panel": "device",
       "type": "gauge",
-      "query": "smartcitizen_sensor_device_sd_card{device=~\"$device\"}"
+      "query": "smartcitizen_device_state_has_published{device=~\"$device\"}"
     },
     {
       "title": "Temperature",

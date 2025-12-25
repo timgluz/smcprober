@@ -9,6 +9,7 @@ vars:
   DOCKER_BIN: nerdctl
   DOCKER_HOST: docker.io
   SMC_NAMESPACE: smcprober
+  VERSION: "v0.0.2-dev"
 
 tasks:
   default:
@@ -79,6 +80,7 @@ tasks:
       - |
         helm template dev ./helm --debug \
           --namespace {{.SMC_NAMESPACE}} \
+          --set "image.tag"="{{.VERSION}}" \
           --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
@@ -94,9 +96,9 @@ tasks:
     cmds:
       - |
         {{.DOCKER_BIN}} build \
-          -t smcprober:latest \
           -t smcprober:{{.VERSION}} \
-          -f Dockerfile .
+          -f Dockerfile \
+          .
 
   "run:docker":
     cmds:
@@ -106,7 +108,7 @@ tasks:
           --volume {{.PWD}}/configs:/app/configs:ro \
           --volume {{.PWD}}/secrets:/app/secrets:ro \
           -p 8080:8080 \
-          smcprober:latest \
+          smcprober:{{.VERSION}} \
           /app/smcexporter --config /app/configs/config-k8s.json --dotenv /app/secrets/.env
     deps:
       - build:docker
@@ -114,15 +116,11 @@ tasks:
   "release:docker":
     cmds:
       - task: "build:docker"
-      - "{{.DOCKER_BIN}} tag smcprober:latest {{.DOCKER_HOST}}/tauho/smcprober:latest"
-      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:latest"
       - "{{.DOCKER_BIN}} tag smcprober:latest {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
       - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
-    vars:
-      VERSION:
-        sh: "cat VERSION"
 
   release:
+    desc: "Deprecated: replaced by pipeline"
     cmds:
       - task: release:docker
       - task: release:helm

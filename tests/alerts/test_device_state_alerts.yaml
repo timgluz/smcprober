@@ -1,0 +1,38 @@
+rule_files:
+  - ../../helm/alerts/device_state_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestSmartCitizenPublishingStopped_NoAlert
+    input_series:
+      - series: 'smartcitizen_device_state_has_published{device="device_123"}'
+        values: "1+0x60"
+    alert_rule_test:
+      - eval_time: 59m
+        alertname: SmartCitizenPublishingStopped
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: SmartCitizenPublishingStopped
+        exp_alerts: []
+  - interval: 1m
+    name: TestSmartCitizenPublishingStopped_Alert
+    input_series:
+      - series: 'smartcitizen_device_state_has_published{device="device_124"}'
+        values: "0+0x60"
+    alert_rule_test:
+      - eval_time: 59m
+        alertname: SmartCitizenPublishingStopped
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: SmartCitizenPublishingStopped
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 has stopped publishing data"
+              description: |-
+                The device device_124 has not published any data in the last 1 hour.
+                Please check the device connectivity and status to ensure it is functioning properly.
