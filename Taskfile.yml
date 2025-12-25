@@ -89,7 +89,6 @@ tasks:
     cmds:
       - |
         {{.DOCKER_BIN}} build \
-          --platform linux/amd64,linux/arm64 \
           -t smcprober:latest \
           -t smcprober:{{.VERSION}} \
           -f Dockerfile .
