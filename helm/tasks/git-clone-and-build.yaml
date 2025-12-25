@@ -35,12 +35,6 @@ spec:
         echo "Cloning repository $(params.repo) from $(params.revision)"
         git clone --depth 1 --branch $(params.revision) \
           https://github.com/$(params.repo).git /workspace/source
-      env:
-        - name: GITHUB_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: github-token
-              key: token
       timeout: "3m"
     - name: build-and-push
       image: quay.io/buildah/stable:latest
