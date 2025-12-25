@@ -20,6 +20,11 @@ const (
 	MaxPanelSpan      = 24
 	DefaultSpan       = 8 // 24 / 3 columns
 	DefaultChartType  = "gauge"
+
+	ChartTypeGauge      = "gauge"
+	ChartTypeTimeSeries = "timeseries"
+	ChartTypeTable      = "table"
+	ChartTypeAlertList  = "alertlist"
 )
 
 type SensorChartConfig struct {
@@ -98,7 +103,7 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 	}
 
 	// add device state panel first
-	rowBuilder := dashboard.NewRowBuilder("Device Information")
+	rowBuilder := dashboard.NewRowBuilder("Device Information").Collapsed(false)
 	for _, chart := range groupedCharts["device"] {
 		rowBuilder.WithPanel(newChartPanel(chart))
 	}
@@ -135,7 +140,7 @@ func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
 		RefId("A")
 
 	switch config.Type {
-	case "table":
+	case ChartTypeTable:
 		queryBuilder.Format(prometheus.PromQueryFormatTable)
 	default:
 		queryBuilder.Format(prometheus.PromQueryFormatTimeSeries)
