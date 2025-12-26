@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/redhat-developer/vscode-tekton/refs/heads/main/scheme/tekton.dev/v1_Task.json
+# This Task builds docker image for specified architecture
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: package-helm
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      type: string
+      description: git repository or URL to clone.
+      default: tauho/smcprober
+    - name: revision
+      type: string
+      description: The git revision (branch, tag, commit) to checkout.
+      default: main
+    - name: version
+      type: string
+      description: Application version to set in Helm chart.
+    - name: chart-path
+      type: string
+      description: Path to the Helm chart directory.
+      default: helm
+    - name: oci-registry
+      type: string
+      description: OCI registry URL to push the Helm chart.
+      default: oci://registry-1.docker.io/tauho
+  workspaces:
+    - name: dockerconfig
+      description: The workspace containing Docker configuration (e.g., for authentication).
+  steps:
+    - name: clone-repo
+      image: chainguard/git:latest
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Cloning repository $(params.repo) from $(params.revision)"
+        git clone --depth 1 --branch $(params.revision) \
+          https://github.com/$(params.repo).git /workspace/source
+
+    - name: lint-helm-chart
+      image: alpine/helm:4
+      script: |
+        #!/bin/sh
+        set -e
+        cd /workspace/source
+        echo "Linting Helm chart at $(params.chart-path)"
+        helm lint $(params.chart-path)
+
+    - name: package-helm-chart
+      image: alpine/helm:4
+      script: |
+        #!/bin/sh
+        set -e
+        cd /workspace/source
+        echo "Packaging Helm chart from $(params.chart-path) with version $(params.version)"
+        helm package $(params.chart-path) --app-version "$(params.version)"
+
+    - name: push-helm-chart
+      image: alpine/helm:4
+      script: |
+        #!/bin/sh
+        set -e
+        cd /workspace/source
+        test -f "$REGISTRY_CONFIG" || (echo "Helm registry config not found!" && exit 1)
+        echo "Setting up Helm OCI registry authentication"
+        USERNAME=$(grep -o '"username":"[^"]*"' "$REGISTRY_CONFIG" | cut -d'"' -f4)
+        PASSWORD=$(grep -o '"password":"[^"]*"' "$REGISTRY_CONFIG" | cut -d'"' -f4)
+        if [ -z "$USERNAME" ] || [ -z "$PASSWORD" ]; then
+          echo "Failed to extract OCI registry credentials from Docker config"
+          exit 1
+        fi
+        # Point Helm to the writable location
+        mkdir -p /tmp/docker
+        export DOCKER_CONFIG=/tmp/docker/config.json
+        echo "Logging in to OCI registry as $USERNAME"
+        helm registry login registry-1.docker.io -u "$USERNAME" --password "$PASSWORD"
+        echo "Pushing Helm chart to $(params.oci-registry)"
+        helm push smcprober-*.tgz $(params.oci-registry)
+      env:
+        - name: REGISTRY_CONFIG
+          value: "/workspace/dockerconfig/.dockerconfigjson"
+
+    - name: cleanup
+      image: alpine:latest
+      script: |
+        #!/bin/sh
+        set -e
+        echo "Cleaning up packaged Helm chart"
+        rm -f /workspace/source/smcprober-*.tgz
