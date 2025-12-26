@@ -112,7 +112,27 @@ tkn task start git-clone-and-build \
   -n smc-cicd
 ```
 
-### Option 2: Run Multi-Architecture Build Pipeline
+### Option 2: Release Helm Chart
+
+- deploys the chart
+
+```bash
+k apply -f helm/tasks/release-helm.yaml
+```
+
+- start task
+
+```bash
+tkn task start package-helm \
+  --param repo=timgluz/smcprober \
+  --param revision=main \
+  --param version=latest \
+  --workspace name=dockerconfig,secret=docker-config \
+  --showlog \
+  -n smc-cicd
+```
+
+### Option 3: Run Multi-Architecture Build Pipeline
 
 To build for both amd64 and arm64 architectures:
 

@@ -9,8 +9,8 @@ vars:
   DOCKER_BIN: nerdctl
   DOCKER_HOST: docker.io
   SMC_NAMESPACE: smcprober
-  #VERSION: "v0.0.2-dev"
-  VERSION: "latest"
+  VERSION:
+    sh: "./scripts/generate-version.sh"
 
 tasks:
   default:
@@ -61,20 +61,32 @@ tasks:
       - echo "Fetching data from SmartCitizen API..."
       - go run cmd/smcdownload/main.go --config configs/config.json --dotenv .env
 
-  lint:
+  "lint:go":
     desc: Run golangci-lint to check code quality
     cmds:
       - golangci-lint run ./...
 
-  "lint:fix":
+  "lint:go:fix":
     desc: Run golangci-lint and automatically fix issues
     cmds:
       - golangci-lint run --fix ./...
+
+  "lint:helm":
+    desc: Lint Helm charts
+    cmds:
+      - helm lint ./helm
 
   "lint:markdown":
     desc: Lint markdown files
     cmds:
       - markdownlint-cli2 README.md docs/*.md
+
+  "lint:all":
+    desc: Run all linters
+    cmds:
+      - task: lint:go
+      - task: lint:helm
+      - task: lint:markdown
 
   "template:helm":
     cmds:
@@ -118,7 +130,7 @@ tasks:
   "release:docker":
     cmds:
       - task: "build:docker"
-      - "{{.DOCKER_BIN}} tag smcprober:latest {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
+      - "{{.DOCKER_BIN}} tag smcprober:{{.VERSION}} {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
       - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
 
   release:

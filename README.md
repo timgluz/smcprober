@@ -39,7 +39,62 @@ Features and APIs may change without notice.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/)
   (for Kubernetes deployment)
 
-### Installation
+### Installation for Production
+
+This section describes how to deploy `smcprober` in a Kubernetes cluster using Helm
+and using pre-defined configuration files and prebuilt Docker images.
+
+#### download configs
+
+As configurations files are not included in the Helm chart package, you need to download them first:
+
+```bash
+mkdir tmp && cd tmp
+curl -L -O https://raw.githubusercontent.com/timgluz/smcprober/refs/heads/main/configs/config-k8s.json
+curl -L -O https://raw.githubusercontent.com/timgluz/smcprober/refs/heads/main/configs/config-exporter-k8s.json
+curl -L -o env https://raw.githubusercontent.com/timgluz/smcprober/refs/heads/main/env.example
+```
+
+note: as soon as the application matures, configs will be templatized and included in the chart package.
+
+#### update configs and env files
+
+- update `config-k8s.json` and `config-exporter-k8s.json` if needed.
+
+- update `env` file
+  only `SMARTCITIZEN_USERNAME` & `SMARTCITIZEN_TOKEN` are required.
+  The value of `SMARTCITIZEN_USERNAME` would be your email and
+  `SMARTCITIZEN_TOKEN` is your API key that you access on your Smartcitizen's profile.
+
+NTFY Webhooks urls are optional, they are used only for sending alerts.
+
+#### installation
+
+- deploy helm chart
+
+```bash
+helm install smcprober-smoke oci://registry-1.docker.io/tauho/smcprober \
+  --namespace smcprober-smoke \
+  --create-namespace \
+  --set namespace=smcprober-smoke \
+  --set-file=configJSON=config-k8s.json \
+  --set-file=configExporterJSON=config-exporter-k8s.json \
+  --set-file=secret.env=env
+```
+
+- list all resources in namespace
+
+```bash
+kubectl get all -n smcprober-smoke
+```
+
+### uninstall
+
+```bash
+helm uninstall smcprober-smoke
+```
+
+### Installation for Development
 
 1. Clone the repository:
 
@@ -56,34 +111,14 @@ go mod download
 
 ### Configuration
 
-1. Create a `.env` file in the project root with your credentials:
+1. Update environment variables in `.env` file:
 
 ```bash
-SMARTCITIZEN_USERNAME="your-email@example.com"
-SMARTCITIZEN_TOKEN="your-smartcitizen-api-token"
-NTFY_TOKEN="your-ntfy-token"
+cp .env.example .env
+nano .env
 ```
 
 1. Configure the application settings in `configs/config.json`:
-
-```json
-{
-  "dotenv_path": ".env",
-  "log_level": "INFO",
-  "battery_sensor_name": "Battery SCK",
-  "ntfy": {
-    "host": "https://ntfy.sh",
-    "topic": "your_topic_name",
-    "token_env": "NTFY_TOKEN"
-  },
-  "smc": {
-    "endpoint": "https://api.smartcitizen.me",
-    "api_version": "v0",
-    "username_env": "SMARTCITIZEN_USERNAME",
-    "password_env": "SMARTCITIZEN_PASSWORD"
-  }
-}
-```
 
 ### Running the Application
 
@@ -156,13 +191,10 @@ doesn't exist.
 task template:helm
 ```
 
-1. Deploy using Helm:
+1. Deploy generated Helm chart to cluster:
 
 ```bash
-helm install smcprober ./helm \
-  --set "imagePullSecrets[0].name"="smcprober-registry" \
-  --set-file=config=configs/config-k8s.json \
-  --set-file=secret.env=.env
+k apply -f smcprober.yaml
 ```
 
 #### Prometheus Monitoring
@@ -201,14 +233,3 @@ serviceMonitor:
 ```
 
 The application exposes Prometheus metrics at `/metrics` endpoint on port 8080.
-
-#### Release
-
-To release a new version:
-
-```bash
-task release
-```
-
-This will build and push both the Docker image and Helm chart.
-The version is read from the `VERSION` file.

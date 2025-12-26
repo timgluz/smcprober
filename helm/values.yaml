@@ -73,7 +73,7 @@ service:
 # Requires prometheus-operator CRDs to be installed
 serviceMonitor:
   # Enable ServiceMonitor creation
-  enabled: false
+  enabled: true
   # Scrape interval for Prometheus
   interval: 30s
   # Scrape timeout
@@ -215,9 +215,11 @@ prometheus:
 alertmanager:
   enabled: true
   webhooks:
-    # Set these webhook URLs via a private values file or secrets; defaults are intentionally empty.
-    default: ""
-    critical: ""
+    # Set these webhook URLs via a private values file or secrets;
+    # defaults are intentionally insecure/public for testing purposes only.
+    # you can create your own ntfy.sh topics for free at https://ntfy.sh
+    default: "https://ntfy.sh/test?template=alertmanager"
+    critical: "https://ntfy.sh/critical-test?template=alertmanager"
   groupWait: "10s"
   groupInterval: "5m"
   repeatInterval: "12h"
