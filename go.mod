@@ -3,7 +3,7 @@ module github.com/timgluz/smcprober
 go 1.25.0
 
 require (
-	github.com/grafana/grafana-foundation-sdk/go v0.0.0-20251008104357-2e5c9f991a96
+	github.com/grafana/grafana-foundation-sdk/go 0f5c66a18ac8
 	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.23.2
 )
