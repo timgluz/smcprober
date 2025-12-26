@@ -73,7 +73,7 @@ service:
 # Requires prometheus-operator CRDs to be installed
 serviceMonitor:
   # Enable ServiceMonitor creation
-  enabled: false
+  enabled: true
   # Scrape interval for Prometheus
   interval: 30s
   # Scrape timeout

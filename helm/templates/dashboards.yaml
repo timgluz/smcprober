@@ -4,7 +4,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ include "helm.name" $ }}-{{ base $path | trimSuffix ".json" | lower }}
-  namespace: {{ $.Values.grafana.namespace | default "monitoring" }}
+  namespace: {{ $.Values.namespace }}
   labels:
     grafana_dashboard: "1"
   annotations:
