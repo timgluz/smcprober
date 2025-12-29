@@ -34,7 +34,7 @@ jobs:
 
       - name: Cache promtool
         id: cache-promtool
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.local/bin/promtool
           key: promtool-${{ runner.os }}-${{ steps.prometheus-version.outputs.version }}
