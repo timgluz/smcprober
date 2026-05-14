@@ -6,8 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/joho/godotenv"
 
@@ -34,6 +36,8 @@ type AppConfig struct {
 
 	LogLevel   string `json:"log_level"`
 	DotEnvPath string `json:"dotenv_path"`
+
+	HealthchecksPingURL string `json:"healthchecks_ping_url"`
 
 	Ntfy ntfy.Config         `json:"ntfy"`
 	Smc  smartcitizen.Config `json:"smartcitizen"`
@@ -118,6 +122,12 @@ func main() {
 		logger.Info("Fetched device detail", "deviceID", deviceDetail.ID, "name", deviceDetail.Name, "state", deviceDetail.State, "sensorsCount", len(deviceDetail.Data.Sensors))
 
 		evaluateDevice(alertEngine, deviceDetail)
+	}
+
+	if appConfig.HealthchecksPingURL != "" {
+		if err := pingHealthchecks(context.Background(), appConfig.HealthchecksPingURL, logger); err != nil {
+			logger.Error("Healthchecks.io ping failed", "error", err)
+		}
 	}
 }
 
@@ -317,4 +327,37 @@ func mapDeviceSensorToMetric(sensor smartcitizen.DeviceSensor) alert.Metric {
 		Unit:        sensor.Unit,
 		Timestamp:   sensor.ToUnix(),
 	}
+}
+
+func pingHealthchecks(ctx context.Context, url string, logger *slog.Logger) error {
+	client := httpclient.NewHTTPClientWithOptions(httpclient.WithTimeout(10 * time.Second))
+
+	const maxRetries = 5
+	var lastErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+		if err != nil {
+			return fmt.Errorf("failed to create healthchecks request: %w", err)
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			logger.Warn("Healthchecks.io ping attempt failed", "attempt", attempt, "error", err)
+			lastErr = err
+			continue
+		}
+		resp.Body.Close()
+
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+			logger.Info("Healthchecks.io ping successful", "attempt", attempt, "status", resp.StatusCode)
+			return nil
+		}
+
+		lastErr = fmt.Errorf("unexpected status %d", resp.StatusCode)
+		logger.Warn("Healthchecks.io ping attempt failed", "attempt", attempt, "status", resp.StatusCode)
+	}
+
+	logger.Error("Healthchecks.io ping failed after all retries", "maxRetries", maxRetries, "error", lastErr)
+	return lastErr
 }
