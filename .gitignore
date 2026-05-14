@@ -35,3 +35,4 @@ secrets/*
 !secrets/env.example
 
 smcprober.yaml
+smcjob
