@@ -233,3 +233,56 @@ serviceMonitor:
 ```
 
 The application exposes Prometheus metrics at `/metrics` endpoint on port 8080.
+
+## CI/CD
+
+Multi-arch Docker images are built via a Tekton pipeline defined in
+`helm/pipelines/build-multiarch-image.yaml`. It runs parallel `linux/amd64`
+and `linux/arm64` builds and then merges them into a single manifest.
+
+### Prerequisites
+
+- [Tekton Pipelines](https://tekton.dev/docs/installation/pipelines/) installed in your cluster
+- [tkn CLI](https://tekton.dev/docs/cli/) installed locally
+- The `git-clone-and-build` and `create-docker-manifest` Tasks deployed to the `smc-cicd` namespace
+- A Kubernetes Secret containing Docker registry credentials (`config.json`)
+
+### Deploy the pipeline
+
+```bash
+kubectl create namespace smc-cicd --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f helm/pipelines/build-multiarch-image.yaml
+```
+
+Verify registration:
+
+```bash
+tkn pipeline list -n smc-cicd
+```
+
+### Trigger a build
+
+```bash
+tkn pipeline start build-multiarch-image \
+  --namespace smc-cicd \
+  --param repo=timgluz/smcprober \
+  --param revision=main \
+  --param image=tauho/smcprober:latest \
+  --workspace name=dockerconfig,secret=<docker-credentials-secret> \
+  --showlog
+```
+
+Replace `<docker-credentials-secret>` with the name of your Secret.
+
+### Monitor runs
+
+```bash
+# List all runs
+tkn pipelinerun list -n smc-cicd
+
+# Stream logs of the latest run
+tkn pipelinerun logs --last -n smc-cicd -f
+
+# Re-run a previous run
+tkn pipelinerun rerun <run-name> -n smc-cicd
+```
