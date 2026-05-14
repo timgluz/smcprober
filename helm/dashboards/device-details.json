@@ -15,7 +15,7 @@
   },
   "fiscalYearStartMonth": 0,
   "refresh": "5m",
-  "schemaVersion": 41,
+  "schemaVersion": 42,
   "panels": [
     {
       "type": "row",
@@ -47,7 +47,8 @@
             "w": 12,
             "x": 0,
             "y": 1
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "table",
@@ -67,7 +68,8 @@
             "w": 12,
             "x": 12,
             "y": 1
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "gauge",
@@ -85,7 +87,8 @@
             "w": 8,
             "x": 0,
             "y": 7
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "gauge",
@@ -103,7 +106,8 @@
             "w": 8,
             "x": 8,
             "y": 7
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "gauge",
@@ -121,7 +125,8 @@
             "w": 8,
             "x": 16,
             "y": 7
-          }
+          },
+          "repeatDirection": "h"
         }
       ]
     },
@@ -153,7 +158,8 @@
             "w": 8,
             "x": 0,
             "y": 14
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -171,7 +177,8 @@
             "w": 8,
             "x": 8,
             "y": 14
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -189,7 +196,8 @@
             "w": 8,
             "x": 16,
             "y": 14
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -207,7 +215,8 @@
             "w": 8,
             "x": 0,
             "y": 20
-          }
+          },
+          "repeatDirection": "h"
         }
       ]
     },
@@ -239,7 +248,8 @@
             "w": 8,
             "x": 0,
             "y": 27
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -257,7 +267,8 @@
             "w": 8,
             "x": 8,
             "y": 27
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -275,7 +286,8 @@
             "w": 8,
             "x": 16,
             "y": 27
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -293,7 +305,8 @@
             "w": 8,
             "x": 0,
             "y": 33
-          }
+          },
+          "repeatDirection": "h"
         }
       ]
     },
@@ -325,7 +338,8 @@
             "w": 8,
             "x": 0,
             "y": 40
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -343,7 +357,8 @@
             "w": 8,
             "x": 8,
             "y": 40
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -361,7 +376,8 @@
             "w": 8,
             "x": 16,
             "y": 40
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -379,7 +395,8 @@
             "w": 8,
             "x": 0,
             "y": 46
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -397,7 +414,8 @@
             "w": 8,
             "x": 8,
             "y": 46
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -415,7 +433,8 @@
             "w": 8,
             "x": 16,
             "y": 46
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -433,7 +452,8 @@
             "w": 8,
             "x": 0,
             "y": 52
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -451,7 +471,8 @@
             "w": 8,
             "x": 8,
             "y": 52
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -469,7 +490,8 @@
             "w": 8,
             "x": 16,
             "y": 52
-          }
+          },
+          "repeatDirection": "h"
         },
         {
           "type": "stat",
@@ -487,7 +509,8 @@
             "w": 8,
             "x": 0,
             "y": 58
-          }
+          },
+          "repeatDirection": "h"
         }
       ]
     }

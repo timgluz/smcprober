@@ -2,7 +2,7 @@
   "dotenv_path": "/app/secrets/env",
   "log_level": "INFO",
   "battery_sensor_name": "Battery SCK",
-  "healthchecks_ping_url": "",
+  "healthchecks_ping_url": "https://hc-ping.com/0cbe4f3c-111c-4684-ab32-26cb0a428b35",
   "ntfy": {
     "host": "https://ntfy.sh",
     "topic": "lu_bismarck72_alerts",
