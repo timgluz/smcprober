@@ -347,7 +347,9 @@ func pingHealthchecks(ctx context.Context, url string, logger *slog.Logger) erro
 			lastErr = err
 			continue
 		}
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			logger.Warn("Failed to close healthchecks response body", "error", closeErr)
+		}
 
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			logger.Info("Healthchecks.io ping successful", "attempt", attempt, "status", resp.StatusCode)
