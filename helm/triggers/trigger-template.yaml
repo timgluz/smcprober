@@ -1,0 +1,38 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerTemplate
+metadata:
+  name: build-multiarch-image-template
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+    - name: revision
+  resourcetemplates:
+    - apiVersion: tekton.dev/v1
+      kind: PipelineRun
+      metadata:
+        generateName: build-multiarch-image-
+        namespace: smc-cicd
+      spec:
+        pipelineRef:
+          name: build-multiarch-image
+        params:
+          - name: repo
+            value: $(tt.params.repo)
+          - name: revision
+            value: $(tt.params.revision)
+          - name: image
+            value: tauho/smcprober:latest
+        workspaces:
+          - name: dockerconfig
+            secret:
+              secretName: docker-config
+        taskRunSpecs:
+          - pipelineTaskName: build-amd64
+            podTemplate:
+              nodeSelector:
+                kubernetes.io/arch: amd64
+          - pipelineTaskName: build-arm64
+            podTemplate:
+              nodeSelector:
+                kubernetes.io/arch: arm64

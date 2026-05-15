@@ -306,3 +306,43 @@ tkn pipelinerun logs --last -n smc-cicd -f
 # Re-run a previous run
 tkn pipelinerun rerun <run-name> -n smc-cicd
 ```
+
+### GitHub webhook (automatic builds on push)
+
+Builds can be triggered automatically on every push to `main` via a GitHub webhook
+and Tekton Triggers. The EventListener is exposed publicly over Tailscale Funnel.
+
+#### Deploy the EventListener
+
+```bash
+task deploy:triggers
+```
+
+#### Create the webhook secret
+
+Generate a random token and store it in the cluster:
+
+```bash
+GITHUB_WEBHOOK_SECRET=$(openssl rand -hex 32)
+echo "Save this token — you will need it in GitHub: $GITHUB_WEBHOOK_SECRET"
+GITHUB_WEBHOOK_SECRET=$GITHUB_WEBHOOK_SECRET task deploy:webhook:secret
+```
+
+#### Get the public webhook URL
+
+```bash
+task get:webhook:url
+```
+
+#### Configure the webhook in GitHub
+
+Go to the repository **Settings → Webhooks → Add webhook** and fill in:
+
+| Field | Value |
+|-------|-------|
+| Payload URL | output of `task get:webhook:url` |
+| Content type | `application/json` |
+| Secret | the token from the step above |
+| Events | `Just the push event` |
+
+Only pushes to `main` trigger a build (other branches are filtered by the EventListener).

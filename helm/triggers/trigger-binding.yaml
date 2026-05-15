@@ -1,0 +1,11 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-push-binding
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      value: $(body.repository.full_name)
+    - name: revision
+      value: $(extensions.branch_name)

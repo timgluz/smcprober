@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tekton-triggers-sa
+  namespace: smc-cicd
+---
+# Bind to pre-installed Tekton role covering triggers + pipelineruns:create
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-triggers-sa-roles
+  namespace: smc-cicd
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-sa
+    namespace: smc-cicd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-roles
+---
+# Cluster-level binding for ClusterInterceptors (github, cel)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tekton-triggers-sa-smc-cicd-clusterroles
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-sa
+    namespace: smc-cicd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: tekton-triggers-eventlistener-clusterroles
+---
+# Extra role to read the webhook secret (not covered by pre-installed roles)
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: tekton-triggers-secret-reader
+  namespace: smc-cicd
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: tekton-triggers-sa-secret-reader
+  namespace: smc-cicd
+subjects:
+  - kind: ServiceAccount
+    name: tekton-triggers-sa
+    namespace: smc-cicd
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: tekton-triggers-secret-reader
