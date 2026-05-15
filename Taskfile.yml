@@ -9,8 +9,9 @@ vars:
   DOCKER_BIN: nerdctl
   DOCKER_HOST: docker.io
   SMC_NAMESPACE: smcprober
-  VERSION:
-    sh: "./scripts/generate-version.sh"
+  VERSION: latest
+# version should come from centralized place as builds are done by Tekton workflows
+#   sh: "./scripts/generate-version.sh"
 
 tasks:
   default:
