@@ -153,6 +153,18 @@ tasks:
           --docker-server={{.DOCKER_HOST}}
     requires:
       vars: [DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_HOST]
+  "deploy:ci:credentials":
+    desc: Create/update docker-config secret in smc-cicd namespace for Tekton pipeline
+    cmds:
+      - echo "Creating Docker registry secret for CI pipeline in namespace smc-cicd"
+      - |
+        kubectl create secret docker-registry docker-config -n smc-cicd \
+          --docker-username={{.DOCKER_USERNAME}} \
+          --docker-password={{.DOCKER_PASSWORD}} \
+          --docker-server=registry-1.docker.io \
+          --dry-run=client -o yaml | kubectl apply -f -
+    requires:
+      vars: [DOCKER_USERNAME, DOCKER_PASSWORD]
   "expose:prometheus":
     cmds:
       - "kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090"

@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/redhat-developer/vscode-tekton/refs/heads/main/scheme/tekton.dev/v1_Task.json
+# Verifies Docker Hub credentials before expensive build steps
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: verify-dockerhub-creds
+  namespace: smc-cicd
+spec:
+  workspaces:
+    - name: dockerconfig
+      description: Workspace containing .dockerconfigjson for Docker Hub authentication.
+  steps:
+    - name: verify-login
+      image: quay.io/buildah/stable:latest
+      imagePullPolicy: IfNotPresent
+      script: |
+        #!/bin/bash
+        set -e
+        echo "Verifying Docker Hub credentials..."
+        buildah login \
+          --authfile /workspace/dockerconfig/.dockerconfigjson \
+          registry-1.docker.io
+        echo "Credentials verified."
