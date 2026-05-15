@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tekton-webhook-funnel
+  namespace: smc-cicd
+  annotations:
+    tailscale.com/funnel: "true"
+spec:
+  type: LoadBalancer
+  loadBalancerClass: tailscale
+  selector:
+    eventlistener: github-webhook
+  ports:
+    - port: 443
+      protocol: TCP
+      targetPort: 8080

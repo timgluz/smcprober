@@ -166,6 +166,26 @@ tasks:
           --dry-run=client -o yaml | kubectl apply -f -
     requires:
       vars: [DOCKER_USERNAME, DOCKER_PASSWORD]
+  "deploy:triggers":
+    desc: Deploy Tekton Triggers resources for GitHub webhook (EventListener + Tailscale Funnel)
+    cmds:
+      - kubectl apply -f helm/triggers/
+  "deploy:webhook:secret":
+    desc: Create/update GitHub webhook HMAC secret for Tekton EventListener
+    cmds:
+      - |
+        kubectl create secret generic github-webhook-secret \
+          --from-literal=secretToken={{.GITHUB_WEBHOOK_SECRET}} \
+          -n smc-cicd \
+          --dry-run=client -o yaml | kubectl apply -f -
+    requires:
+      vars: [GITHUB_WEBHOOK_SECRET]
+  "get:webhook:url":
+    desc: Print the public Funnel URL to configure in GitHub webhook settings
+    cmds:
+      - |
+        kubectl get svc tekton-webhook-funnel -n smc-cicd \
+          -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
   "expose:prometheus":
     cmds:
       - "kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090"
