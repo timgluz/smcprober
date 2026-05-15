@@ -184,8 +184,30 @@ tasks:
     desc: Print the public Funnel URL to configure in GitHub webhook settings
     cmds:
       - |
-        kubectl get svc tekton-webhook-funnel -n smc-cicd \
+        kubectl get ingress tekton-webhook-funnel -n smc-cicd \
           -o jsonpath='{.status.loadBalancer.ingress[0].hostname}{"\n"}'
+  "smoke:cicd:webhook":
+    desc: Send a signed test push event through Tailscale Funnel to verify the webhook path end-to-end
+    cmds:
+      - |
+        SECRET=$(kubectl get secret github-webhook-secret -n smc-cicd \
+          -o jsonpath='{.data.secretToken}' | base64 -d)
+        URL=https://$(kubectl get ingress tekton-webhook-funnel -n smc-cicd \
+          -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+        BODY='{"ref":"refs/heads/main","repository":{"full_name":"{{.GITHUB_REPO}}"}}'
+        SIG=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print "sha256="$2}')
+        echo "Sending test push event to $URL"
+        curl -sf -X POST \
+          -H "Content-Type: application/json" \
+          -H "X-GitHub-Event: push" \
+          -H "X-GitHub-Delivery: smoke-test-$(date +%s)" \
+          -H "X-Hub-Signature-256: $SIG" \
+          -d "$BODY" \
+          "$URL"
+        echo ""
+        echo "Done - check pipeline runs with: kubectl get pipelinerun -n smc-cicd"
+    vars:
+      GITHUB_REPO: timgluz/smcprober
   "expose:prometheus":
     cmds:
       - "kubectl port-forward -n monitoring svc/prometheus-operated 9090:9090"
