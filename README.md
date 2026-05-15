@@ -158,6 +158,7 @@ Available Task commands:
 - `task release:helm` - Package and push Helm chart
 - `task release` - Release both Docker and Helm
 - `task deploy:credentials` - Deploy credentials to Kubernetes
+- `task deploy:ci:credentials` - Deploy Docker credentials for CI pipeline (smc-cicd namespace)
 
 View all available tasks:
 
@@ -237,21 +238,40 @@ The application exposes Prometheus metrics at `/metrics` endpoint on port 8080.
 ## CI/CD
 
 Multi-arch Docker images are built via a Tekton pipeline defined in
-`helm/pipelines/build-multiarch-image.yaml`. It runs parallel `linux/amd64`
-and `linux/arm64` builds and then merges them into a single manifest.
+`helm/pipelines/build-multiarch-image.yaml`. It runs a credential pre-check
+first, then parallel `linux/amd64` and `linux/arm64` builds, and finally
+merges them into a single manifest.
+
+Pipeline task order:
+
+```
+verify-creds
+    ├── build-amd64 (parallel)
+    └── build-arm64 (parallel)
+            └── create-manifest
+```
 
 ### Prerequisites
 
 - [Tekton Pipelines](https://tekton.dev/docs/installation/pipelines/) installed in your cluster
 - [tkn CLI](https://tekton.dev/docs/cli/) installed locally
-- The `git-clone-and-build` and `create-docker-manifest` Tasks deployed to the `smc-cicd` namespace
-- A Kubernetes Secret containing Docker registry credentials (`config.json`)
+- The `verify-dockerhub-creds`, `git-clone-and-build`, and `create-docker-manifest` Tasks deployed to the `smc-cicd` namespace
+- A Kubernetes Secret named `docker-config` containing Docker Hub credentials in the `smc-cicd` namespace
 
 ### Deploy the pipeline
 
 ```bash
 kubectl create namespace smc-cicd --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f helm/tasks/verify-dockerhub-creds.yaml
+kubectl apply -f helm/tasks/git-clone-and-build.yaml
+kubectl apply -f helm/tasks/create-docker-manifest.yaml
 kubectl apply -f helm/pipelines/build-multiarch-image.yaml
+```
+
+Create the Docker Hub credentials secret (requires `DOCKER_USERNAME` and `DOCKER_PASSWORD` in `.env`):
+
+```bash
+task deploy:ci:credentials
 ```
 
 Verify registration:

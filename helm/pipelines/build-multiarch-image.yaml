@@ -17,8 +17,16 @@ spec:
   workspaces:
     - name: dockerconfig
   tasks:
+    - name: verify-creds
+      taskRef:
+        name: verify-dockerhub-creds
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
     - name: build-amd64
       retries: 3
+      runAfter:
+        - verify-creds
       taskRef:
         name: git-clone-and-build
       workspaces:
@@ -35,6 +43,8 @@ spec:
           value: linux/amd64
     - name: build-arm64
       retries: 3
+      runAfter:
+        - verify-creds
       taskRef:
         name: git-clone-and-build
       workspaces:
