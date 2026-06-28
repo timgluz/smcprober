@@ -51,7 +51,9 @@ With mise installed, run once in the repo root to get all tools:
 mise trust && mise install
 ```
 
-This installs: `task`, `helm`, `kubectl`, `nerdctl`, `golangci-lint`, and `promtool` at the versions pinned in `.mise.toml`.
+This installs: `task`, `helm`, `kubectl`, `golangci-lint`, and `promtool` at the versions pinned in `.mise.toml`.
+
+For containerised builds you also need Docker or [nerdctl](https://github.com/containerd/nerdctl) — install whichever your system uses; the `DOCKER_BIN` variable in `Taskfile.yml` controls which one is called.
 
 ### Installation for Production
 
