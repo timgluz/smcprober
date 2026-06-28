@@ -1,0 +1,196 @@
+rule_files:
+  - ../../helm/alerts/environment_air_quality_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # PM2.5 — 24h average elevated
+  - interval: 1m
+    name: TestPM25Elevated_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_123"}'
+        values: "10+0x30"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SmartCitizenAirQualityPM25Elevated
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestPM25Elevated_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_124"}'
+        values: "20+0x31"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SmartCitizenAirQualityPM25Elevated
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: SmartCitizenAirQualityPM25Elevated
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 reports elevated PM2.5"
+              description: |-
+                The 24-hour average PM2.5 reported by device device_124 is 20 µg/m³,
+                exceeding the WHO 2021 AQG 24-hour mean limit of 15 µg/m³.
+
+  # PM2.5 — 24h average high
+  - interval: 1m
+    name: TestPM25High_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_125"}'
+        values: "30+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenAirQualityPM25High
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenAirQualityPM25High
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 reports high PM2.5"
+              description: |-
+                The 24-hour average PM2.5 reported by device device_125 is 30 µg/m³,
+                exceeding the EU daily limit of 25 µg/m³. Immediate attention required.
+
+  # PM2.5 — acute spike
+  - interval: 1m
+    name: TestPM25AcuteSpike_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_126"}'
+        values: "60+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenAirQualityPM25AcuteSpike
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenAirQualityPM25AcuteSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_126
+            exp_annotations:
+              summary: "Device device_126 reports acute PM2.5 spike"
+              description: |-
+                The instantaneous PM2.5 reported by device device_126 is 60 µg/m³,
+                well above the WHO 24-hour limit. A localised pollution event may be in progress.
+
+  # PM10 — 24h average elevated
+  - interval: 1m
+    name: TestPM10Elevated_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_123"}'
+        values: "40+0x30"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SmartCitizenAirQualityPM10Elevated
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestPM10Elevated_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_127"}'
+        values: "50+0x31"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SmartCitizenAirQualityPM10Elevated
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: SmartCitizenAirQualityPM10Elevated
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_127
+            exp_annotations:
+              summary: "Device device_127 reports elevated PM10"
+              description: |-
+                The 24-hour average PM10 reported by device device_127 is 50 µg/m³,
+                exceeding the WHO 2021 AQG 24-hour mean limit of 45 µg/m³.
+
+  # PM10 — 24h average high
+  - interval: 1m
+    name: TestPM10High_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_128"}'
+        values: "100+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenAirQualityPM10High
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenAirQualityPM10High
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_128
+            exp_annotations:
+              summary: "Device device_128 reports high PM10"
+              description: |-
+                The 24-hour average PM10 reported by device device_128 is 100 µg/m³,
+                exceeding the EU daily limit of 90 µg/m³. Immediate attention required.
+
+  # PM10 — acute spike
+  - interval: 1m
+    name: TestPM10AcuteSpike_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_129"}'
+        values: "200+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenAirQualityPM10AcuteSpike
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenAirQualityPM10AcuteSpike
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_129
+            exp_annotations:
+              summary: "Device device_129 reports acute PM10 spike"
+              description: |-
+                The instantaneous PM10 reported by device device_129 is 200 µg/m³.
+                A dust event or acute pollution source may be in progress.
+
+  # Saharan dust — coarse fraction
+  - interval: 1m
+    name: TestSaharanDust_NoAlert_LowCoarseFraction
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_123"}'
+        values: "50+0x60"
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_123"}'
+        values: "40+0x60"
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: SmartCitizenSaharanDustEvent
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestSaharanDust_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_pm10{device="device_130"}'
+        values: "80+0x61"
+      - series: 'smartcitizen_sensor_environment_pm2_5{device="device_130"}'
+        values: "20+0x61"
+    alert_rule_test:
+      - eval_time: 59m
+        alertname: SmartCitizenSaharanDustEvent
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: SmartCitizenSaharanDustEvent
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              class: saharan_dust
+              device: device_130
+            exp_annotations:
+              summary: "Device device_130 detects possible Saharan dust event"
+              description: |-
+                The coarse particle fraction (PM10 − PM2.5) reported by device device_130 is 60 µg/m³,
+                indicating a large proportion of coarse dust particles consistent with a Saharan dust transport event.

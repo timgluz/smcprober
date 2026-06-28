@@ -117,7 +117,21 @@
       "metric": "weighted_noise_level",
       "panel": "environment",
       "type": "stat",
-      "query": "avg by (device) (smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"})"
+      "query": "avg by (device) (smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"})",
+      "thresholds": [
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 55,
+          "color": "yellow"
+        },
+        {
+          "value": 65,
+          "color": "red"
+        }
+      ]
     },
     {
       "title": "Ambient Light",
@@ -183,7 +197,25 @@
       "metric": "pm2_5",
       "panel": "air_quality",
       "type": "stat",
-      "query": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
+      "thresholds": [
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 15,
+          "color": "yellow"
+        },
+        {
+          "value": 25,
+          "color": "orange"
+        },
+        {
+          "value": 50,
+          "color": "red"
+        }
+      ]
     },
     {
       "title": "PM4.0",
@@ -199,7 +231,51 @@
       "metric": "pm10",
       "panel": "air_quality",
       "type": "stat",
-      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})",
+      "thresholds": [
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 45,
+          "color": "yellow"
+        },
+        {
+          "value": 90,
+          "color": "orange"
+        },
+        {
+          "value": 150,
+          "color": "red"
+        }
+      ]
+    },
+    {
+      "title": "Coarse Fraction PM10−PM2.5 (µg/m³)",
+      "description": "Coarse particle fraction (PM10 minus PM2.5). A value above 30 with PM10 above 40 may indicate a Saharan dust transport event.",
+      "metric": "pm_coarse_fraction",
+      "panel": "air_quality",
+      "type": "stat",
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"} - smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
+      "thresholds": [
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 10,
+          "color": "yellow"
+        },
+        {
+          "value": 30,
+          "color": "orange"
+        },
+        {
+          "value": 60,
+          "color": "red"
+        }
+      ]
     },
     {
       "title": "Total Particle Score (TPS)",

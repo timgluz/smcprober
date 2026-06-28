@@ -1,0 +1,69 @@
+rule_files:
+  - ../../helm/alerts/environment_sensor_health_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  # Sensor data absent — data present, no alert
+  - interval: 1m
+    name: TestSensorDataAbsent_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_123"}'
+        values: "20+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SmartCitizenSensorDataAbsent
+        exp_alerts: []
+
+  # Sensor data absent — no data at all, alert fires
+  - interval: 1m
+    name: TestSensorDataAbsent_CriticalAlert
+    input_series: []
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenSensorDataAbsent
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenSensorDataAbsent
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+            exp_annotations:
+              summary: "SmartCitizen sensor data is missing"
+              description: |-
+                No temperature data has been received from any SmartCitizen device for over 15 minutes.
+                The exporter may be down or the device may be offline.
+
+  # Noise sensor stuck — varying values, no alert
+  - interval: 1m
+    name: TestNoiseSensorStuck_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_123"}'
+        values: "40+1x61"
+    alert_rule_test:
+      - eval_time: 60m
+        alertname: SmartCitizenNoiseSensorStuck
+        exp_alerts: []
+
+  # Noise sensor stuck — constant value for 2h, alert fires at 1h of for:
+  - interval: 1m
+    name: TestNoiseSensorStuck_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_124"}'
+        values: "42+0x121"
+    alert_rule_test:
+      - eval_time: 59m
+        alertname: SmartCitizenNoiseSensorStuck
+        exp_alerts: []
+      - eval_time: 60m
+        alertname: SmartCitizenNoiseSensorStuck
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 noise sensor appears stuck"
+              description: |-
+                The noise sensor on device device_124 has reported an identical value for over 1 hour.
+                The sensor may be malfunctioning or frozen.

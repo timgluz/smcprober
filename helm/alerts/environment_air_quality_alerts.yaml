@@ -1,0 +1,84 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_environment_air_quality_alerts
+    rules:
+      # PM2.5 — WHO 2021 AQG 24-hour mean thresholds
+      - alert: SmartCitizenAirQualityPM25Elevated
+        expr: avg by (device) (avg_over_time(smartcitizen_sensor_environment_pm2_5[24h])) > 15
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports elevated PM2.5"
+          description: |-
+            The 24-hour average PM2.5 reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            exceeding the WHO 2021 AQG 24-hour mean limit of 15 µg/m³.
+      - alert: SmartCitizenAirQualityPM25High
+        expr: avg by (device) (avg_over_time(smartcitizen_sensor_environment_pm2_5[24h])) > 25
+        for: 15m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} reports high PM2.5"
+          description: |-
+            The 24-hour average PM2.5 reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            exceeding the EU daily limit of 25 µg/m³. Immediate attention required.
+      # PM2.5 — acute spike (instantaneous)
+      - alert: SmartCitizenAirQualityPM25AcuteSpike
+        expr: avg by (device) (smartcitizen_sensor_environment_pm2_5) > 50
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports acute PM2.5 spike"
+          description: |-
+            The instantaneous PM2.5 reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            well above the WHO 24-hour limit. A localised pollution event may be in progress.
+      # PM10 — WHO 2021 AQG 24-hour mean thresholds
+      - alert: SmartCitizenAirQualityPM10Elevated
+        expr: avg by (device) (avg_over_time(smartcitizen_sensor_environment_pm10[24h])) > 45
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports elevated PM10"
+          description: |-
+            The 24-hour average PM10 reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            exceeding the WHO 2021 AQG 24-hour mean limit of 45 µg/m³.
+      - alert: SmartCitizenAirQualityPM10High
+        expr: avg by (device) (avg_over_time(smartcitizen_sensor_environment_pm10[24h])) > 90
+        for: 15m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} reports high PM10"
+          description: |-
+            The 24-hour average PM10 reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            exceeding the EU daily limit of 90 µg/m³. Immediate attention required.
+      # PM10 — acute spike (instantaneous)
+      - alert: SmartCitizenAirQualityPM10AcuteSpike
+        expr: avg by (device) (smartcitizen_sensor_environment_pm10) > 150
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports acute PM10 spike"
+          description: |-
+            The instantaneous PM10 reported by device {{ $labels.device }} is {{ $value }} µg/m³.
+            A dust event or acute pollution source may be in progress.
+      # Saharan dust — coarse particle fraction signature
+      - alert: SmartCitizenSaharanDustEvent
+        expr: |-
+          avg by (device) (smartcitizen_sensor_environment_pm10 - smartcitizen_sensor_environment_pm2_5) > 30
+            and avg by (device) (smartcitizen_sensor_environment_pm10) > 40
+        for: 1h
+        labels:
+          severity: warning
+          class: saharan_dust
+        annotations:
+          summary: "Device {{ $labels.device }} detects possible Saharan dust event"
+          description: |-
+            The coarse particle fraction (PM10 − PM2.5) reported by device {{ $labels.device }} is {{ $value }} µg/m³,
+            indicating a large proportion of coarse dust particles consistent with a Saharan dust transport event.

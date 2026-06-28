@@ -1,0 +1,25 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_environment_sensor_health_alerts
+    rules:
+      - alert: SmartCitizenSensorDataAbsent
+        expr: absent(smartcitizen_sensor_environment_temperature)
+        for: 15m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "SmartCitizen sensor data is missing"
+          description: |-
+            No temperature data has been received from any SmartCitizen device for over 15 minutes.
+            The exporter may be down or the device may be offline.
+      - alert: SmartCitizenNoiseSensorStuck
+        expr: avg by (device) (stddev_over_time(smartcitizen_sensor_environment_weighted_noise_level[1h])) == 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} noise sensor appears stuck"
+          description: |-
+            The noise sensor on device {{ $labels.device }} has reported an identical value for over 1 hour.
+            The sensor may be malfunctioning or frozen.

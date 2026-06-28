@@ -1,0 +1,67 @@
+rule_files:
+  - ../../helm/alerts/environment_noise_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestNoiseElevated_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_123"}'
+        values: "50+0x30"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SmartCitizenNoiseElevated
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestNoiseElevated_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_124"}'
+        values: "60+0x31"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SmartCitizenNoiseElevated
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: SmartCitizenNoiseElevated
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 reports elevated noise level"
+              description: |-
+                The 1-hour average noise level reported by device device_124 is 60 dB(A),
+                exceeding the EU Environmental Noise Directive action level of 55 dB(A).
+
+  - interval: 1m
+    name: TestNoiseLoud_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_123"}'
+        values: "62+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SmartCitizenNoiseLoud
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestNoiseLoud_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_weighted_noise_level{device="device_125"}'
+        values: "70+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenNoiseLoud
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenNoiseLoud
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 reports loud sustained noise"
+              description: |-
+                The 1-hour average noise level reported by device device_125 is 70 dB(A),
+                exceeding the EU Environmental Noise Directive limit value of 65 dB(A).
