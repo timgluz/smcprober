@@ -34,6 +34,10 @@ Features and APIs may change without notice.
   coloring, generated from a JSON config via `gen-device-dashboard`
 - Scheduled job (`smcjob`) with ntfy.sh push notifications
 
+## Dashboard
+
+![SmartCitizen Device dashboard showing temperature 38.7°C (orange), humidity 33.2% (green), UVA 161 µW/cm² (yellow) and active alerts](docs/screenshots/dashboard.png)
+
 ## Getting Started
 
 ### Prerequisites
