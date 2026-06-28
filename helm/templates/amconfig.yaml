@@ -32,11 +32,11 @@ spec:
       sendResolved: true
 
   inhibitRules:
-  - sourceMatchers:
+  - sourceMatch:
     - name: severity
       value: critical
       matchType: '='
-    targetMatchers:
+    targetMatch:
     - name: severity
       value: warning
       matchType: '='
