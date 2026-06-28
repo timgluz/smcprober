@@ -30,6 +30,17 @@ spec:
     webhookConfigs:
     - url: {{ .Values.alertmanager.webhooks.critical | quote }}
       sendResolved: true
+
+  inhibitRules:
+  - sourceMatchers:
+    - name: severity
+      value: critical
+      matchType: '='
+    targetMatchers:
+    - name: severity
+      value: warning
+      matchType: '='
+    equal: [device]
 {{- else }}
 # Alertmanager is disabled; no AlertmanagerConfig will be created.
 {{- end }}

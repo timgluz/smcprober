@@ -159,7 +159,54 @@
             "x": 0,
             "y": 14
           },
-          "repeatDirection": "h"
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "dark-blue"
+                  },
+                  {
+                    "value": -10,
+                    "color": "blue"
+                  },
+                  {
+                    "value": 0,
+                    "color": "green"
+                  },
+                  {
+                    "value": 30,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 38,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 50,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
         },
         {
           "type": "stat",
@@ -178,7 +225,42 @@
             "x": 8,
             "y": 14
           },
-          "repeatDirection": "h"
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 85,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 90,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
         },
         {
           "type": "stat",
@@ -260,7 +342,7 @@
               "refId": "A"
             }
           ],
-          "title": "UVA",
+          "title": "UVA (µW/cm²)",
           "transparent": false,
           "gridPos": {
             "h": 6,
@@ -268,7 +350,46 @@
             "x": 8,
             "y": 27
           },
-          "repeatDirection": "h"
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 140,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 185,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 250,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
         },
         {
           "type": "stat",

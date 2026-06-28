@@ -9,8 +9,10 @@ import (
 	"path/filepath"
 
 	"github.com/grafana/grafana-foundation-sdk/go/cog"
+	"github.com/grafana/grafana-foundation-sdk/go/common"
 	"github.com/grafana/grafana-foundation-sdk/go/dashboard"
 	"github.com/grafana/grafana-foundation-sdk/go/prometheus"
+	"github.com/grafana/grafana-foundation-sdk/go/stat"
 )
 
 const (
@@ -27,15 +29,21 @@ const (
 	ChartTypeAlertList  = "alertlist"
 )
 
+type ThresholdStep struct {
+	Value *float64 `json:"value"`
+	Color string   `json:"color"`
+}
+
 type SensorChartConfig struct {
-	Title   string `json:"title"`
-	Metric  string `json:"metric"`
-	Panel   string `json:"panel"`
-	Type    string `json:"type"`
-	Query   string `json:"query"`
-	Instant bool   `json:"instant,omitempty"`
-	Span    uint32 `json:"span,omitempty"`
-	Height  uint32 `json:"height,omitempty"`
+	Title      string          `json:"title"`
+	Metric     string          `json:"metric"`
+	Panel      string          `json:"panel"`
+	Type       string          `json:"type"`
+	Query      string          `json:"query"`
+	Instant    bool            `json:"instant,omitempty"`
+	Span       uint32          `json:"span,omitempty"`
+	Height     uint32          `json:"height,omitempty"`
+	Thresholds []ThresholdStep `json:"thresholds,omitempty"`
 }
 
 type DashboardConfig struct {
@@ -105,7 +113,7 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 	// add device state panel first
 	rowBuilder := dashboard.NewRowBuilder("Device Information").Collapsed(false)
 	for _, chart := range groupedCharts["device"] {
-		rowBuilder.WithPanel(newChartPanel(chart))
+		rowBuilder.WithPanel(buildChartPanel(chart))
 	}
 	builder.WithRow(rowBuilder)
 	delete(groupedCharts, "device")
@@ -115,7 +123,7 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 		rowBuilder := dashboard.NewRowBuilder(panelName)
 
 		for _, chart := range charts {
-			rowBuilder.WithPanel(newChartPanel(chart))
+			rowBuilder.WithPanel(buildChartPanel(chart))
 		}
 
 		builder.WithRow(rowBuilder)
@@ -134,21 +142,18 @@ func buildDashboard(config *DashboardConfig) ([]byte, error) {
 	return dashboardJSON, nil
 }
 
-func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
-	queryBuilder := prometheus.NewDataqueryBuilder().
-		Expr(config.Query).
-		RefId("A")
-
-	switch config.Type {
-	case ChartTypeTable:
-		queryBuilder.Format(prometheus.PromQueryFormatTable)
-	default:
-		queryBuilder.Format(prometheus.PromQueryFormatTimeSeries)
+func buildChartPanel(config SensorChartConfig) cog.Builder[dashboard.Panel] {
+	if config.Type == ChartTypeGauge && len(config.Thresholds) == 0 {
+		return newGenericPanel(config)
 	}
-
-	if config.Instant {
-		queryBuilder.Instant()
+	if config.Type == "stat" && len(config.Thresholds) > 0 {
+		return newStatPanel(config)
 	}
+	return newGenericPanel(config)
+}
+
+func newGenericPanel(config SensorChartConfig) *dashboard.PanelBuilder {
+	queryBuilder := buildQuery(config)
 
 	var width = uint32(DefaultSpan)
 	if config.Span > 0 && config.Span <= MaxPanelSpan {
@@ -166,6 +171,59 @@ func newChartPanel(config SensorChartConfig) *dashboard.PanelBuilder {
 		Height(height).
 		Span(width).
 		WithTarget(queryBuilder)
+}
+
+func newStatPanel(config SensorChartConfig) *stat.PanelBuilder {
+	queryBuilder := buildQuery(config)
+
+	var width = uint32(DefaultSpan)
+	if config.Span > 0 && config.Span <= MaxPanelSpan {
+		width = config.Span
+	}
+
+	var height = uint32(DefaultHeight)
+	if config.Height > 0 && config.Height < MaxPanelHeight {
+		height = config.Height
+	}
+
+	steps := make([]dashboard.Threshold, 0, len(config.Thresholds))
+	for _, t := range config.Thresholds {
+		steps = append(steps, dashboard.Threshold{
+			Value: t.Value,
+			Color: t.Color,
+		})
+	}
+
+	thresholds := dashboard.NewThresholdsConfigBuilder().
+		Mode(dashboard.ThresholdsModeAbsolute).
+		Steps(steps)
+
+	return stat.NewPanelBuilder().
+		Title(config.Title).
+		Height(height).
+		Span(width).
+		WithTarget(queryBuilder).
+		ColorMode(common.BigValueColorModeBackground).
+		Thresholds(thresholds)
+}
+
+func buildQuery(config SensorChartConfig) *prometheus.DataqueryBuilder {
+	queryBuilder := prometheus.NewDataqueryBuilder().
+		Expr(config.Query).
+		RefId("A")
+
+	switch config.Type {
+	case ChartTypeTable:
+		queryBuilder.Format(prometheus.PromQueryFormatTable)
+	default:
+		queryBuilder.Format(prometheus.PromQueryFormatTimeSeries)
+	}
+
+	if config.Instant {
+		queryBuilder.Instant()
+	}
+
+	return queryBuilder
 }
 
 func loadDashboardConfig(path string) (*DashboardConfig, error) {

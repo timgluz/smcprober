@@ -19,9 +19,9 @@ tasks:
       - echo "{{.GREETING}}"
     silent: true
   "test:alerts":
+    desc: Run Prometheus alert rule tests
     cmds:
-      - echo "Running alert tests for SmartCitizen device low battery..."
-      - promtool test rules tests/alerts/test_*.yaml
+      - mise exec -- promtool test rules tests/alerts/test_*.yaml
 
   "generate:device:dashboard":
     cmds:

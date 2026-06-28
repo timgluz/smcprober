@@ -1,0 +1,35 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_environment_uv_alerts
+    rules:
+      - alert: SmartCitizenUVHigh
+        expr: smartcitizen_sensor_environment_uva > 140
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports high UVA irradiance"
+          description: |-
+            The UVA irradiance reported by device {{ $labels.device }} is {{ $value }} µW/cm²,
+            exceeding the high threshold of 140 µW/cm². UV protection is recommended.
+      - alert: SmartCitizenUVVeryHigh
+        expr: smartcitizen_sensor_environment_uva > 185
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} reports very high UVA irradiance"
+          description: |-
+            The UVA irradiance reported by device {{ $labels.device }} is {{ $value }} µW/cm²,
+            exceeding the very high threshold of 185 µW/cm². Strong UV protection is essential.
+      - alert: SmartCitizenUVExtreme
+        expr: smartcitizen_sensor_environment_uva > 250
+        for: 5m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} reports extreme UVA irradiance"
+          description: |-
+            The UVA irradiance reported by device {{ $labels.device }} is {{ $value }} µW/cm²,
+            exceeding the extreme threshold of 250 µW/cm². Avoid outdoor exposure without maximum protection.

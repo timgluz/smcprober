@@ -1,0 +1,79 @@
+rule_files:
+  - ../../helm/alerts/environment_uv_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestUVHigh_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_uva{device="device_123"}'
+        values: "100+0x10"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: SmartCitizenUVHigh
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestUVHigh_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_uva{device="device_124"}'
+        values: "150+0x11"
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: SmartCitizenUVHigh
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: SmartCitizenUVHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 reports high UVA irradiance"
+              description: |-
+                The UVA irradiance reported by device device_124 is 150 µW/cm²,
+                exceeding the high threshold of 140 µW/cm². UV protection is recommended.
+
+  - interval: 1m
+    name: TestUVVeryHigh_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_uva{device="device_125"}'
+        values: "200+0x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: SmartCitizenUVVeryHigh
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: SmartCitizenUVVeryHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 reports very high UVA irradiance"
+              description: |-
+                The UVA irradiance reported by device device_125 is 200 µW/cm²,
+                exceeding the very high threshold of 185 µW/cm². Strong UV protection is essential.
+
+  - interval: 1m
+    name: TestUVExtreme_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_uva{device="device_126"}'
+        values: "300+0x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: SmartCitizenUVExtreme
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: SmartCitizenUVExtreme
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_126
+            exp_annotations:
+              summary: "Device device_126 reports extreme UVA irradiance"
+              description: |-
+                The UVA irradiance reported by device device_126 is 300 µW/cm²,
+                exceeding the extreme threshold of 250 µW/cm². Avoid outdoor exposure without maximum protection.

@@ -53,7 +53,15 @@
       "metric": "temperature",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}"
+      "query": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
+      "thresholds": [
+        {"value": null, "color": "dark-blue"},
+        {"value": -10, "color": "blue"},
+        {"value": 0, "color": "green"},
+        {"value": 30, "color": "yellow"},
+        {"value": 38, "color": "orange"},
+        {"value": 50, "color": "red"}
+      ]
     },
     {
       "title": "Humidity",
@@ -61,7 +69,12 @@
       "metric": "humidity",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}"
+      "query": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
+      "thresholds": [
+        {"value": null, "color": "green"},
+        {"value": 85, "color": "yellow"},
+        {"value": 90, "color": "red"}
+      ]
     },
     {
       "title": "Barometric Pressure",
@@ -88,12 +101,18 @@
       "query": "smartcitizen_sensor_environment_ambient_light{device=~\"$device\"}"
     },
     {
-      "title": "UVA",
+      "title": "UVA (µW/cm²)",
       "description": "UVA radiation level measured by the SmartCitizen device.",
       "metric": "uva",
       "panel": "light",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_uva{device=~\"$device\"}"
+      "query": "smartcitizen_sensor_environment_uva{device=~\"$device\"}",
+      "thresholds": [
+        {"value": null, "color": "green"},
+        {"value": 140, "color": "yellow"},
+        {"value": 185, "color": "orange"},
+        {"value": 250, "color": "red"}
+      ]
     },
     {
       "title": "UVB",

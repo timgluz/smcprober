@@ -1,0 +1,82 @@
+rule_files:
+  - ../../helm/alerts/environment_temperature_device_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestDeviceTempHigh_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_123"}'
+        values: "25+0x10"
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: SmartCitizenDeviceTempHigh
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestDeviceTempHigh_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_124"}'
+        values: "52+0x11"
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: SmartCitizenDeviceTempHigh
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: SmartCitizenDeviceTempHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 temperature approaching operating limit"
+              description: |-
+                The temperature reported by device device_124 is 52°C,
+                approaching the maximum operating temperature of 55°C.
+
+  - interval: 1m
+    name: TestDeviceTempCritical_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_125"}'
+        values: "55+0x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: SmartCitizenDeviceTempCritical
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: SmartCitizenDeviceTempCritical
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 temperature at or above operating limit"
+              description: |-
+                The temperature reported by device device_125 is 55°C,
+                which has reached or exceeded the maximum operating temperature of 55°C.
+                The device may malfunction or sustain damage. Immediate action required.
+
+  - interval: 1m
+    name: TestDeviceTempLow_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_126"}'
+        values: "-10+0x6"
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: SmartCitizenDeviceTempLow
+        exp_alerts: []
+      - eval_time: 5m
+        alertname: SmartCitizenDeviceTempLow
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_126
+            exp_annotations:
+              summary: "Device device_126 temperature at or below operating limit"
+              description: |-
+                The temperature reported by device device_126 is -10°C,
+                which has reached or fallen below the minimum operating temperature of -10°C.
+                The device may malfunction or sustain damage. Immediate action required.

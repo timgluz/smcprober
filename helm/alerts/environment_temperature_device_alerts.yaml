@@ -1,0 +1,38 @@
+# yaml-language-server: https://www.schemastore.org/prometheus-alertmanager.json
+groups:
+  - name: smartcitizen_environment_temperature_device_alerts
+    rules:
+      - alert: SmartCitizenDeviceTempHigh
+        expr: smartcitizen_sensor_environment_temperature > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Device {{ $labels.device }} temperature approaching operating limit"
+          description: |-
+            The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
+            approaching the maximum operating temperature of 55°C.
+      - alert: SmartCitizenDeviceTempCritical
+        expr: smartcitizen_sensor_environment_temperature >= 55
+        for: 5m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} temperature at or above operating limit"
+          description: |-
+            The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
+            which has reached or exceeded the maximum operating temperature of 55°C.
+            The device may malfunction or sustain damage. Immediate action required.
+      - alert: SmartCitizenDeviceTempLow
+        expr: smartcitizen_sensor_environment_temperature <= -10
+        for: 5m
+        labels:
+          severity: critical
+          notify: team_on_call
+        annotations:
+          summary: "Device {{ $labels.device }} temperature at or below operating limit"
+          description: |-
+            The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
+            which has reached or fallen below the minimum operating temperature of -10°C.
+            The device may malfunction or sustain damage. Immediate action required.

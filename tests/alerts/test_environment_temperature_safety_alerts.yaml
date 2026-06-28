@@ -1,0 +1,111 @@
+rule_files:
+  - ../../helm/alerts/environment_temperature_safety_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestFrostWarning_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_123"}'
+        values: "5+0x30"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SmartCitizenFrostWarning
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestFrostWarning_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_124"}'
+        values: "-3+0x31"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SmartCitizenFrostWarning
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: SmartCitizenFrostWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 reports frost temperature"
+              description: |-
+                The temperature reported by device device_124 is -3°C,
+                which is below freezing. Risk of frost conditions.
+
+  - interval: 1m
+    name: TestExtremeCold_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_125"}'
+        values: "-15+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenExtremeCold
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenExtremeCold
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 reports extreme cold"
+              description: |-
+                The temperature reported by device device_125 is -15°C,
+                which is below -10°C. Extreme cold conditions — immediate attention required.
+
+  - interval: 1m
+    name: TestHeatWarning_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_126"}'
+        values: "25+0x30"
+    alert_rule_test:
+      - eval_time: 30m
+        alertname: SmartCitizenHeatWarning
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestHeatWarning_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_127"}'
+        values: "35+0x31"
+    alert_rule_test:
+      - eval_time: 29m
+        alertname: SmartCitizenHeatWarning
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: SmartCitizenHeatWarning
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_127
+            exp_annotations:
+              summary: "Device device_127 reports heat warning temperature"
+              description: |-
+                The temperature reported by device device_127 is 35°C,
+                which exceeds the EU heat-health warning threshold of 30°C.
+
+  - interval: 1m
+    name: TestExtremeHeat_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_temperature{device="device_128"}'
+        values: "40+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenExtremeHeat
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenExtremeHeat
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_128
+            exp_annotations:
+              summary: "Device device_128 reports extreme heat"
+              description: |-
+                The temperature reported by device device_128 is 40°C,
+                which exceeds the EU extreme heat threshold of 38°C. Immediate attention required.

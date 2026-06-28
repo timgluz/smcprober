@@ -1,0 +1,59 @@
+rule_files:
+  - ../../helm/alerts/environment_humidity_device_alerts.yaml
+
+evaluation_interval: 1m
+
+tests:
+  - interval: 1m
+    name: TestDeviceHumidityHigh_NoAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_humidity{device="device_123"}'
+        values: "60+0x15"
+    alert_rule_test:
+      - eval_time: 15m
+        alertname: SmartCitizenDeviceHumidityHigh
+        exp_alerts: []
+
+  - interval: 1m
+    name: TestDeviceHumidityHigh_WarningAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_humidity{device="device_124"}'
+        values: "88+0x16"
+    alert_rule_test:
+      - eval_time: 14m
+        alertname: SmartCitizenDeviceHumidityHigh
+        exp_alerts: []
+      - eval_time: 15m
+        alertname: SmartCitizenDeviceHumidityHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              device: device_124
+            exp_annotations:
+              summary: "Device device_124 humidity approaching operating limit"
+              description: |-
+                The humidity reported by device device_124 is 88%,
+                approaching the maximum operating humidity of 90% RH.
+
+  - interval: 1m
+    name: TestDeviceHumidityCritical_CriticalAlert
+    input_series:
+      - series: 'smartcitizen_sensor_environment_humidity{device="device_125"}'
+        values: "92+0x11"
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: SmartCitizenDeviceHumidityCritical
+        exp_alerts: []
+      - eval_time: 10m
+        alertname: SmartCitizenDeviceHumidityCritical
+        exp_alerts:
+          - exp_labels:
+              severity: critical
+              notify: team_on_call
+              device: device_125
+            exp_annotations:
+              summary: "Device device_125 humidity at or above operating limit"
+              description: |-
+                The humidity reported by device device_125 is 92%,
+                which has reached or exceeded the maximum operating humidity of 90% RH.
+                The device may malfunction or sustain damage. Immediate action required.
