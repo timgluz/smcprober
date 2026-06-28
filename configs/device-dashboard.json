@@ -29,7 +29,7 @@
       "metric": "battery",
       "panel": "device",
       "type": "gauge",
-      "query": "smartcitizen_sensor_device_battery{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_device_battery{device=~\"$device\"})"
     },
     {
       "title": "WiFi Signal Strength",
@@ -37,7 +37,7 @@
       "metric": "rssi",
       "panel": "device",
       "type": "gauge",
-      "query": "smartcitizen_sensor_device_rssi{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_device_rssi{device=~\"$device\"})"
     },
     {
       "title": "Data ",
@@ -45,7 +45,7 @@
       "metric": "has_published",
       "panel": "device",
       "type": "gauge",
-      "query": "smartcitizen_device_state_has_published{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_device_state_has_published{device=~\"$device\"})"
     },
     {
       "title": "Temperature",
@@ -53,14 +53,32 @@
       "metric": "temperature",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
+      "query": "avg by (device) (smartcitizen_sensor_environment_temperature{device=~\"$device\"})",
       "thresholds": [
-        {"value": null, "color": "dark-blue"},
-        {"value": -10, "color": "blue"},
-        {"value": 0, "color": "green"},
-        {"value": 30, "color": "yellow"},
-        {"value": 38, "color": "orange"},
-        {"value": 50, "color": "red"}
+        {
+          "value": null,
+          "color": "dark-blue"
+        },
+        {
+          "value": -10,
+          "color": "blue"
+        },
+        {
+          "value": 0,
+          "color": "green"
+        },
+        {
+          "value": 30,
+          "color": "yellow"
+        },
+        {
+          "value": 38,
+          "color": "orange"
+        },
+        {
+          "value": 50,
+          "color": "red"
+        }
       ]
     },
     {
@@ -69,11 +87,20 @@
       "metric": "humidity",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
+      "query": "avg by (device) (smartcitizen_sensor_environment_humidity{device=~\"$device\"})",
       "thresholds": [
-        {"value": null, "color": "green"},
-        {"value": 85, "color": "yellow"},
-        {"value": 90, "color": "red"}
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 85,
+          "color": "yellow"
+        },
+        {
+          "value": 90,
+          "color": "red"
+        }
       ]
     },
     {
@@ -82,7 +109,7 @@
       "metric": "barometric_pressure",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"})"
     },
     {
       "title": "Weighted Noise Level",
@@ -90,7 +117,7 @@
       "metric": "weighted_noise_level",
       "panel": "environment",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"})"
     },
     {
       "title": "Ambient Light",
@@ -98,20 +125,32 @@
       "metric": "ambient_light",
       "panel": "light",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_ambient_light{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_ambient_light{device=~\"$device\"})"
     },
     {
-      "title": "UVA (µW/cm²)",
+      "title": "UVA (\u00b5W/cm\u00b2)",
       "description": "UVA radiation level measured by the SmartCitizen device.",
       "metric": "uva",
       "panel": "light",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_uva{device=~\"$device\"}",
+      "query": "avg by (device) (smartcitizen_sensor_environment_uva{device=~\"$device\"})",
       "thresholds": [
-        {"value": null, "color": "green"},
-        {"value": 140, "color": "yellow"},
-        {"value": 185, "color": "orange"},
-        {"value": 250, "color": "red"}
+        {
+          "value": null,
+          "color": "green"
+        },
+        {
+          "value": 140,
+          "color": "yellow"
+        },
+        {
+          "value": 185,
+          "color": "orange"
+        },
+        {
+          "value": 250,
+          "color": "red"
+        }
       ]
     },
     {
@@ -120,7 +159,7 @@
       "metric": "uvb",
       "panel": "light",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_uvb{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_uvb{device=~\"$device\"})"
     },
     {
       "title": "UVC",
@@ -128,7 +167,7 @@
       "metric": "uvc",
       "panel": "light",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_uvc{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_uvc{device=~\"$device\"})"
     },
     {
       "title": "PM1.0",
@@ -136,7 +175,7 @@
       "metric": "pm1",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pm1{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm1{device=~\"$device\"})"
     },
     {
       "title": "PM2.5",
@@ -144,7 +183,7 @@
       "metric": "pm2_5",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pm2_5{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})"
     },
     {
       "title": "PM4.0",
@@ -152,7 +191,7 @@
       "metric": "pm4",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pm4{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm4{device=~\"$device\"})"
     },
     {
       "title": "PM10",
@@ -160,7 +199,7 @@
       "metric": "pm10",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pm10{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})"
     },
     {
       "title": "Total Particle Score (TPS)",
@@ -168,7 +207,7 @@
       "metric": "tps",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_tps{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_tps{device=~\"$device\"})"
     },
     {
       "title": "PN0.5",
@@ -176,7 +215,7 @@
       "metric": "pn0_5",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pn0_5{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pn0_5{device=~\"$device\"})"
     },
     {
       "title": "PN1.0",
@@ -184,7 +223,7 @@
       "metric": "pn1",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pn1{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pn1{device=~\"$device\"})"
     },
     {
       "title": "PN2.5",
@@ -192,7 +231,7 @@
       "metric": "pn2_5",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pn2_5{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pn2_5{device=~\"$device\"})"
     },
     {
       "title": "PN4.0",
@@ -200,7 +239,7 @@
       "metric": "pn4",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pn4{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pn4{device=~\"$device\"})"
     },
     {
       "title": "PN10.0",
@@ -208,7 +247,7 @@
       "metric": "pn10",
       "panel": "air_quality",
       "type": "stat",
-      "query": "smartcitizen_sensor_environment_pn10{device=~\"$device\"}"
+      "query": "avg by (device) (smartcitizen_sensor_environment_pn10{device=~\"$device\"})"
     }
   ]
 }

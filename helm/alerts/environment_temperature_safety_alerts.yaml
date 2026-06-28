@@ -3,7 +3,7 @@ groups:
   - name: smartcitizen_environment_temperature_safety_alerts
     rules:
       - alert: SmartCitizenFrostWarning
-        expr: smartcitizen_sensor_environment_temperature < 0
+        expr: avg by (device) (smartcitizen_sensor_environment_temperature) < 0
         for: 30m
         labels:
           severity: warning
@@ -13,7 +13,7 @@ groups:
             The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
             which is below freezing. Risk of frost conditions.
       - alert: SmartCitizenExtremeCold
-        expr: smartcitizen_sensor_environment_temperature < -10
+        expr: avg by (device) (smartcitizen_sensor_environment_temperature) < -10
         for: 15m
         labels:
           severity: critical
@@ -24,7 +24,7 @@ groups:
             The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
             which is below -10°C. Extreme cold conditions — immediate attention required.
       - alert: SmartCitizenHeatWarning
-        expr: smartcitizen_sensor_environment_temperature > 30
+        expr: avg by (device) (smartcitizen_sensor_environment_temperature) > 30
         for: 30m
         labels:
           severity: warning
@@ -34,7 +34,7 @@ groups:
             The temperature reported by device {{ $labels.device }} is {{ $value }}°C,
             which exceeds the EU heat-health warning threshold of 30°C.
       - alert: SmartCitizenExtremeHeat
-        expr: smartcitizen_sensor_environment_temperature > 38
+        expr: avg by (device) (smartcitizen_sensor_environment_temperature) > 38
         for: 15m
         labels:
           severity: critical

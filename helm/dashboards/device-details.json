@@ -75,7 +75,7 @@
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_device_battery{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_device_battery{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -94,7 +94,7 @@
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_device_rssi{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_device_rssi{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -113,7 +113,7 @@
           "type": "gauge",
           "targets": [
             {
-              "expr": "smartcitizen_device_state_has_published{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_device_state_has_published{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -146,7 +146,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_temperature{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_temperature{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -212,7 +212,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_humidity{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_humidity{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -266,7 +266,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_barometric_pressure{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -285,7 +285,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_weighted_noise_level{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -318,7 +318,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_ambient_light{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_ambient_light{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -337,7 +337,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_uva{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uva{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -395,7 +395,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_uvb{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uvb{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -414,7 +414,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_uvc{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uvc{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -447,7 +447,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pm1{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm1{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -466,7 +466,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pm2_5{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -485,7 +485,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pm4{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm4{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -504,7 +504,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pm10{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -523,7 +523,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_tps{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_tps{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -542,7 +542,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pn0_5{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn0_5{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -561,7 +561,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pn1{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn1{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -580,7 +580,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pn2_5{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn2_5{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -599,7 +599,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pn4{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn4{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }
@@ -618,7 +618,7 @@
           "type": "stat",
           "targets": [
             {
-              "expr": "smartcitizen_sensor_environment_pn10{device=~\"$device\"}",
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn10{device=~\"$device\"})",
               "format": "time_series",
               "refId": "A"
             }

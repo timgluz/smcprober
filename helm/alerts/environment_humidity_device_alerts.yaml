@@ -3,7 +3,7 @@ groups:
   - name: smartcitizen_environment_humidity_device_alerts
     rules:
       - alert: SmartCitizenDeviceHumidityHigh
-        expr: smartcitizen_sensor_environment_humidity > 85
+        expr: avg by (device) (smartcitizen_sensor_environment_humidity) > 85
         for: 15m
         labels:
           severity: warning
@@ -13,7 +13,7 @@ groups:
             The humidity reported by device {{ $labels.device }} is {{ $value }}%,
             approaching the maximum operating humidity of 90% RH.
       - alert: SmartCitizenDeviceHumidityCritical
-        expr: smartcitizen_sensor_environment_humidity >= 90
+        expr: avg by (device) (smartcitizen_sensor_environment_humidity) >= 90
         for: 10m
         labels:
           severity: critical
