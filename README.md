@@ -42,16 +42,16 @@ Features and APIs may change without notice.
 
 ### Prerequisites
 
-- [Go 1.x](https://golang.org/doc/install) (for local development)
-- [Task](https://taskfile.dev) - Task runner (install via
-  `brew install go-task/tap/go-task` or see
-  [installation guide](https://taskfile.dev/installation/))
-- [Docker](https://docs.docker.com/get-docker/) or
-  [nerdctl](https://github.com/containerd/nerdctl)
-  (for containerized deployment)
-- [Helm](https://helm.sh/docs/intro/install/) (for Kubernetes deployment)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
-  (for Kubernetes deployment)
+- [Go](https://golang.org/doc/install) (for local development; see `go.mod` for the required version)
+- [mise](https://mise.jdx.dev) — manages all other CLI dependencies at pinned versions
+
+With mise installed, run once in the repo root to get all tools:
+
+```bash
+mise trust && mise install
+```
+
+This installs: `task`, `helm`, `kubectl`, `nerdctl`, `golangci-lint`, and `promtool` at the versions pinned in `.mise.toml`.
 
 ### Installation for Production
 
@@ -180,11 +180,7 @@ task --list
 
 #### Alert rule tests
 
-Alert rules in `helm/alerts/` are tested with `promtool`.
-[mise](https://mise.jdx.dev) manages the pinned `promtool` version:
-
 ```bash
-mise install   # one-time setup
 task test:alerts
 ```
 
