@@ -72,7 +72,7 @@
           "repeatDirection": "h"
         },
         {
-          "type": "gauge",
+          "type": "stat",
           "targets": [
             {
               "expr": "avg by (device) (smartcitizen_sensor_device_battery{device=~\"$device\"})",
@@ -88,7 +88,42 @@
             "x": 0,
             "y": 7
           },
-          "repeatDirection": "h"
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "red"
+                  },
+                  {
+                    "value": 20,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 35,
+                    "color": "green"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
         },
         {
           "type": "gauge",
@@ -133,481 +168,12 @@
     {
       "type": "row",
       "collapsed": true,
-      "title": "light",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 13
-      },
-      "id": 0,
-      "panels": [
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_ambient_light{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Ambient Light",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 14
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_uva{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "UVA (µW/cm²)",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 14
-          },
-          "repeatDirection": "h",
-          "options": {
-            "graphMode": "area",
-            "colorMode": "background",
-            "justifyMode": "auto",
-            "textMode": "auto",
-            "wideLayout": true,
-            "showPercentChange": false,
-            "reduceOptions": {
-              "calcs": []
-            },
-            "percentChangeColorMode": "standard",
-            "orientation": ""
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "value": null,
-                    "color": "green"
-                  },
-                  {
-                    "value": 140,
-                    "color": "yellow"
-                  },
-                  {
-                    "value": 185,
-                    "color": "orange"
-                  },
-                  {
-                    "value": 250,
-                    "color": "red"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_uvb{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "UVB",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 14
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_uvc{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "UVC",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 20
-          },
-          "repeatDirection": "h"
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "collapsed": true,
-      "title": "air_quality",
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 26
-      },
-      "id": 0,
-      "panels": [
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pm1{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PM1.0",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 27
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PM2.5",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 27
-          },
-          "repeatDirection": "h",
-          "options": {
-            "graphMode": "area",
-            "colorMode": "background",
-            "justifyMode": "auto",
-            "textMode": "auto",
-            "wideLayout": true,
-            "showPercentChange": false,
-            "reduceOptions": {
-              "calcs": []
-            },
-            "percentChangeColorMode": "standard",
-            "orientation": ""
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "value": null,
-                    "color": "green"
-                  },
-                  {
-                    "value": 15,
-                    "color": "yellow"
-                  },
-                  {
-                    "value": 25,
-                    "color": "orange"
-                  },
-                  {
-                    "value": 50,
-                    "color": "red"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pm4{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PM4.0",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 27
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PM10",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 33
-          },
-          "repeatDirection": "h",
-          "options": {
-            "graphMode": "area",
-            "colorMode": "background",
-            "justifyMode": "auto",
-            "textMode": "auto",
-            "wideLayout": true,
-            "showPercentChange": false,
-            "reduceOptions": {
-              "calcs": []
-            },
-            "percentChangeColorMode": "standard",
-            "orientation": ""
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "value": null,
-                    "color": "green"
-                  },
-                  {
-                    "value": 45,
-                    "color": "yellow"
-                  },
-                  {
-                    "value": 90,
-                    "color": "orange"
-                  },
-                  {
-                    "value": 150,
-                    "color": "red"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"} - smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Coarse Fraction PM10−PM2.5 (µg/m³)",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 33
-          },
-          "repeatDirection": "h",
-          "options": {
-            "graphMode": "area",
-            "colorMode": "background",
-            "justifyMode": "auto",
-            "textMode": "auto",
-            "wideLayout": true,
-            "showPercentChange": false,
-            "reduceOptions": {
-              "calcs": []
-            },
-            "percentChangeColorMode": "standard",
-            "orientation": ""
-          },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  {
-                    "value": null,
-                    "color": "green"
-                  },
-                  {
-                    "value": 10,
-                    "color": "yellow"
-                  },
-                  {
-                    "value": 30,
-                    "color": "orange"
-                  },
-                  {
-                    "value": 60,
-                    "color": "red"
-                  }
-                ]
-              }
-            },
-            "overrides": []
-          }
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_tps{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "Total Particle Score (TPS)",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 33
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pn0_5{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PN0.5",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 39
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pn1{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PN1.0",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 39
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pn2_5{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PN2.5",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 16,
-            "y": 39
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pn4{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PN4.0",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 0,
-            "y": 45
-          },
-          "repeatDirection": "h"
-        },
-        {
-          "type": "stat",
-          "targets": [
-            {
-              "expr": "avg by (device) (smartcitizen_sensor_environment_pn10{device=~\"$device\"})",
-              "format": "time_series",
-              "refId": "A"
-            }
-          ],
-          "title": "PN10.0",
-          "transparent": false,
-          "gridPos": {
-            "h": 6,
-            "w": 8,
-            "x": 8,
-            "y": 45
-          },
-          "repeatDirection": "h"
-        }
-      ]
-    },
-    {
-      "type": "row",
-      "collapsed": true,
       "title": "environment",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 51
+        "y": 13
       },
       "id": 0,
       "panels": [
@@ -626,7 +192,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 52
+            "y": 14
           },
           "repeatDirection": "h",
           "options": {
@@ -692,7 +258,7 @@
             "h": 6,
             "w": 8,
             "x": 8,
-            "y": 52
+            "y": 14
           },
           "repeatDirection": "h",
           "options": {
@@ -746,7 +312,7 @@
             "h": 6,
             "w": 8,
             "x": 16,
-            "y": 52
+            "y": 14
           },
           "repeatDirection": "h"
         },
@@ -765,7 +331,7 @@
             "h": 6,
             "w": 8,
             "x": 0,
-            "y": 58
+            "y": 20
           },
           "repeatDirection": "h",
           "options": {
@@ -803,6 +369,475 @@
             },
             "overrides": []
           }
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "light",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 26
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_ambient_light{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Ambient Light",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 27
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uva{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVA (µW/cm²)",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 27
+          },
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 140,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 185,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 250,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uvb{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVB",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 27
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_uvc{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "UVC",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 33
+          },
+          "repeatDirection": "h"
+        }
+      ]
+    },
+    {
+      "type": "row",
+      "collapsed": true,
+      "title": "air_quality",
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 39
+      },
+      "id": 0,
+      "panels": [
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm1{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM1.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 40
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM2.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 40
+          },
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 15,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 25,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 50,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm4{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM4.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 40
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PM10",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 46
+          },
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 45,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 90,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 150,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"}) - avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Coarse Fraction PM10−PM2.5 (µg/m³)",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 46
+          },
+          "repeatDirection": "h",
+          "options": {
+            "graphMode": "area",
+            "colorMode": "background",
+            "justifyMode": "auto",
+            "textMode": "auto",
+            "wideLayout": true,
+            "showPercentChange": false,
+            "reduceOptions": {
+              "calcs": []
+            },
+            "percentChangeColorMode": "standard",
+            "orientation": ""
+          },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "value": null,
+                    "color": "green"
+                  },
+                  {
+                    "value": 10,
+                    "color": "yellow"
+                  },
+                  {
+                    "value": 30,
+                    "color": "orange"
+                  },
+                  {
+                    "value": 60,
+                    "color": "red"
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_tps{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "Total Particle Score (TPS)",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 46
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn0_5{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN0.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 52
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn1{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN1.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 52
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn2_5{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN2.5",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 16,
+            "y": 52
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn4{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN4.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 0,
+            "y": 58
+          },
+          "repeatDirection": "h"
+        },
+        {
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "avg by (device) (smartcitizen_sensor_environment_pn10{device=~\"$device\"})",
+              "format": "time_series",
+              "refId": "A"
+            }
+          ],
+          "title": "PN10.0",
+          "transparent": false,
+          "gridPos": {
+            "h": 6,
+            "w": 8,
+            "x": 8,
+            "y": 58
+          },
+          "repeatDirection": "h"
         }
       ]
     }

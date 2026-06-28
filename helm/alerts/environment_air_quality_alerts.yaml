@@ -71,7 +71,7 @@ groups:
       # Saharan dust — coarse particle fraction signature
       - alert: SmartCitizenSaharanDustEvent
         expr: |-
-          avg by (device) (smartcitizen_sensor_environment_pm10 - smartcitizen_sensor_environment_pm2_5) > 30
+          (avg by (device) (smartcitizen_sensor_environment_pm10) - avg by (device) (smartcitizen_sensor_environment_pm2_5)) > 30
             and avg by (device) (smartcitizen_sensor_environment_pm10) > 40
         for: 1h
         labels:

@@ -28,8 +28,22 @@
       "description": "Battery level of the SmartCitizen device.",
       "metric": "battery",
       "panel": "device",
-      "type": "gauge",
-      "query": "avg by (device) (smartcitizen_sensor_device_battery{device=~\"$device\"})"
+      "type": "stat",
+      "query": "avg by (device) (smartcitizen_sensor_device_battery{device=~\"$device\"})",
+      "thresholds": [
+        {
+          "value": null,
+          "color": "red"
+        },
+        {
+          "value": 20,
+          "color": "orange"
+        },
+        {
+          "value": 35,
+          "color": "green"
+        }
+      ]
     },
     {
       "title": "WiFi Signal Strength",
@@ -257,7 +271,7 @@
       "metric": "pm_coarse_fraction",
       "panel": "air_quality",
       "type": "stat",
-      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"} - smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
+      "query": "avg by (device) (smartcitizen_sensor_environment_pm10{device=~\"$device\"}) - avg by (device) (smartcitizen_sensor_environment_pm2_5{device=~\"$device\"})",
       "thresholds": [
         {
           "value": null,
