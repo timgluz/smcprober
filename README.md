@@ -3,7 +3,7 @@
 SmartCitizen Prober is a small service for checking the status of
 SmartCitizen devices and report their connectivity and sensors' status.
 
-It's splitted into 3 different binaries based on use case:
+It is split into four binaries based on use case:
 
 1. smcdownloader: Download data from SmartCitizen devices and store it
    locally for further processing.
@@ -15,6 +15,9 @@ It's splitted into 3 different binaries based on use case:
    It is designed to be deployed in Kubernetes using Helm and could be used
    for advanced monitoring and alerting.
 
+4. gen-device-dashboard: Generates Grafana dashboard JSON from a config file,
+   used to keep the dashboard definition in source control.
+
 ## Status
 
 Project is in early development stage and developed as sideproject.
@@ -22,7 +25,14 @@ Features and APIs may change without notice.
 
 ## Features
 
-- Periodically checks the battery level of SmartCitizen devices.
+- Prometheus exporter for SmartCitizen device sensors (temperature, humidity,
+  air quality PM1/PM2.5/PM4/PM10, noise, UV, battery, WiFi)
+- Prometheus alert rules for environment thresholds (temperature, humidity,
+  UV index, noise level, PM2.5/PM10 air quality, Saharan dust detection)
+- Sensor health alerts (data absent, stuck sensor detection)
+- Grafana dashboard with per-device stat panels and background threshold
+  coloring, generated from a JSON config via `gen-device-dashboard`
+- Scheduled job (`smcjob`) with ntfy.sh push notifications
 
 ## Getting Started
 
@@ -124,35 +134,33 @@ nano .env
 
 #### Run Locally
 
-Run the application directly with Go:
-
 ```bash
-task run
+task run:exporter   # Prometheus exporter on port 8080
+task run:job        # One-shot alert job
+task run:downloader # Download device data from API
 ```
-
-This executes: `go run main.go --config configs/config.json`
 
 #### Run with Docker
 
-Build and run the application in a container:
-
 ```bash
-task run:docker
-```
-
-Or manually:
-
-```bash
-task build:docker
+task build:docker   # Build image via nerdctl
+task run:docker     # Build and run container
 ```
 
 ### Development
 
 Available Task commands:
 
-- `task run` - Run the application locally
-- `task build:docker` - Build Docker image
+- `task run:exporter` - Run Prometheus exporter locally (port 8080)
+- `task run:job` - Run one-shot alert job
+- `task run:downloader` - Download device data from API
+- `task build:docker` - Build Docker image via nerdctl
 - `task run:docker` - Build and run Docker container
+- `task lint:go` - Run golangci-lint
+- `task lint:go:fix` - Run golangci-lint with auto-fix
+- `task lint:all` - Run all linters (Go, Helm, Markdown)
+- `task test:alerts` - Run Prometheus alert rule tests
+- `task generate:dashboards` - Regenerate Grafana dashboard JSON
 - `task template:helm` - Template and validate Helm chart
 - `task release:docker` - Release Docker image to registry
 - `task release:helm` - Package and push Helm chart
@@ -164,6 +172,25 @@ View all available tasks:
 
 ```bash
 task --list
+```
+
+#### Alert rule tests
+
+Alert rules in `helm/alerts/` are tested with `promtool`.
+[mise](https://mise.jdx.dev) manages the pinned `promtool` version:
+
+```bash
+mise install   # one-time setup
+task test:alerts
+```
+
+#### Grafana dashboard
+
+The dashboard JSON committed to `helm/dashboards/` is generated from
+`configs/device-dashboard.json`. After editing the config, regenerate:
+
+```bash
+task generate:dashboards
 ```
 
 ### Deployment

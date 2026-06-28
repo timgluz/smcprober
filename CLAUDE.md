@@ -13,7 +13,7 @@ task run:downloader     # Download device data from API
 task lint:go            # Run golangci-lint
 task lint:go:fix        # Run golangci-lint with auto-fix
 task lint:all           # Run all linters (go, helm, markdown)
-task test:alerts        # Run Prometheus alert rule tests (requires promtool)
+task test:alerts        # Run Prometheus alert rule tests (uses mise-managed promtool; run `mise install` first)
 task build:docker       # Build Docker image via nerdctl
 task template:helm      # Template Helm chart and dry-run apply
 task generate:dashboards # Regenerate Grafana dashboard JSON
