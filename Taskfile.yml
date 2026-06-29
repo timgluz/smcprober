@@ -78,11 +78,15 @@ tasks:
 
   "lint:go":
     desc: Run golangci-lint to check code quality
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - golangci-lint run ./...
 
   "lint:go:fix":
     desc: Run golangci-lint and automatically fix issues
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - golangci-lint run --fix ./...
 
