@@ -223,3 +223,16 @@ alertmanager:
   groupWait: "10s"
   groupInterval: "5m"
   repeatInterval: "12h"
+
+weather:
+  enabled: false
+  port: 8081
+  configJSON: ""
+  serviceMonitor:
+    enabled: true
+    interval: 1800s
+    scrapeTimeout: 30s
+    path: /metrics
+    honorLabels: true
+    labels:
+      release: prometheus

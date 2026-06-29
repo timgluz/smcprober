@@ -1,0 +1,11 @@
+{{- if .Values.weather.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smcprober-weather-config
+  namespace: "{{ .Values.namespace }}"
+  labels: {{- include "helm.labels" . | nindent 4 }}
+data:
+  configWeather.json: |
+{{ .Values.weather.configJSON | indent 4 }}
+{{- end }}
