@@ -14,19 +14,21 @@ import (
 const owmFixtureJSON = `{
     "lat": 49.4811,
     "lon": 8.4353,
-    "current": {
-        "temp": 22.1,
-        "feels_like": 21.5,
-        "pressure": 1013,
-        "humidity": 65,
-        "uvi": 3.2,
-        "clouds": 40,
-        "visibility": 10000,
-        "wind_speed": 3.5,
-        "wind_deg": 180,
-        "sunrise": 1719550800,
-        "sunset": 1719605400
-    }
+    "data": [
+        {
+            "temp": 22.1,
+            "feels_like": 21.5,
+            "pressure": 1013,
+            "humidity": 65,
+            "uvi": 3.2,
+            "clouds": 40,
+            "visibility": 10000,
+            "wind_speed": 3.5,
+            "wind_deg": 180,
+            "sunrise": 1719550800,
+            "sunset": 1719605400
+        }
+    ]
 }`
 
 func TestHTTPProvider_GetCurrentWeather(t *testing.T) {

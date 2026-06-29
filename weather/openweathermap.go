@@ -66,22 +66,26 @@ func (p *HTTPProvider) Ping(ctx context.Context) error {
 	return err
 }
 
+// owmCurrentData matches one element of the "data" array returned by
+// the /data/4.0/onecall/current endpoint (timemachine-style response).
+type owmCurrentData struct {
+	Temp       float64 `json:"temp"`
+	FeelsLike  float64 `json:"feels_like"`
+	Pressure   float64 `json:"pressure"`
+	Humidity   float64 `json:"humidity"`
+	UVI        float64 `json:"uvi"`
+	Clouds     float64 `json:"clouds"`
+	Visibility float64 `json:"visibility"`
+	WindSpeed  float64 `json:"wind_speed"`
+	WindDeg    float64 `json:"wind_deg"`
+	Sunrise    int64   `json:"sunrise"`
+	Sunset     int64   `json:"sunset"`
+}
+
 type owmResponse struct {
-	Lat float64 `json:"lat"`
-	Lon float64 `json:"lon"`
-	Current struct {
-		Temp       float64 `json:"temp"`
-		FeelsLike  float64 `json:"feels_like"`
-		Pressure   float64 `json:"pressure"`
-		Humidity   float64 `json:"humidity"`
-		UVI        float64 `json:"uvi"`
-		Clouds     float64 `json:"clouds"`
-		Visibility float64 `json:"visibility"`
-		WindSpeed  float64 `json:"wind_speed"`
-		WindDeg    float64 `json:"wind_deg"`
-		Sunrise    int64   `json:"sunrise"`
-		Sunset     int64   `json:"sunset"`
-	} `json:"current"`
+	Lat  float64          `json:"lat"`
+	Lon  float64          `json:"lon"`
+	Data []owmCurrentData `json:"data"`
 }
 
 func (p *HTTPProvider) GetCurrentWeather(ctx context.Context, lat, lon float64) (CurrentWeather, error) {
@@ -129,21 +133,25 @@ func (p *HTTPProvider) GetCurrentWeather(ctx context.Context, lat, lon float64) 
 	if err := json.Unmarshal(content, &owm); err != nil {
 		return CurrentWeather{}, fmt.Errorf("weather: failed to parse response: %w", err)
 	}
+	if len(owm.Data) == 0 {
+		return CurrentWeather{}, fmt.Errorf("weather: empty data array in response")
+	}
+	d := owm.Data[0]
 
 	cw := CurrentWeather{
 		Lat:         owm.Lat,
 		Lon:         owm.Lon,
-		Temperature: owm.Current.Temp,
-		FeelsLike:   owm.Current.FeelsLike,
-		Pressure:    owm.Current.Pressure,
-		Humidity:    owm.Current.Humidity,
-		UVIndex:     owm.Current.UVI,
-		Clouds:      owm.Current.Clouds,
-		Visibility:  owm.Current.Visibility,
-		WindSpeed:   owm.Current.WindSpeed,
-		WindDeg:     owm.Current.WindDeg,
-		Sunrise:     owm.Current.Sunrise,
-		Sunset:      owm.Current.Sunset,
+		Temperature: d.Temp,
+		FeelsLike:   d.FeelsLike,
+		Pressure:    d.Pressure,
+		Humidity:    d.Humidity,
+		UVIndex:     d.UVI,
+		Clouds:      d.Clouds,
+		Visibility:  d.Visibility,
+		WindSpeed:   d.WindSpeed,
+		WindDeg:     d.WindDeg,
+		Sunrise:     d.Sunrise,
+		Sunset:      d.Sunset,
 		// Name and Country are intentionally left empty:
 		// Name is injected by the exporter from config.Locations
 		// Country is not returned by the onecall endpoint
