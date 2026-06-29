@@ -90,13 +90,13 @@ tasks:
       - task: lint:markdown
 
   "template:helm":
+    desc: Render Helm templates for inspection (dry-run only, does not deploy)
     cmds:
       - task: generate:dashboards
       - |
         helm template dev ./helm --debug \
           --namespace {{.SMC_NAMESPACE}} \
           --set "image.tag"="{{.VERSION}}" \
-          --set "imagePullSecrets[0].name"="smcprober-registry" \
           --set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
@@ -106,6 +106,24 @@ tasks:
           --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}" \
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
+
+  "deploy:helm":
+    desc: Deploy or upgrade the smcprober release via Helm (tracked, atomic)
+    cmds:
+      - task: generate:dashboards
+      - |
+        helm upgrade --install dev ./helm \
+          --namespace {{.SMC_NAMESPACE}} \
+          --create-namespace \
+          --rollback-on-failure \
+          --set "image.tag"="{{.VERSION}}" \
+          --set-file=configJSON=configs/config-k8s.json \
+          --set-file=configExporterJSON=configs/config-exporter-k8s.json \
+          --set-file=secret.env=.env \
+          --set serviceMonitor.enabled=true \
+          --set alertmanager.enabled=true \
+          --set alertmanager.webhooks.default="{{.NTFY_DEFAULT_WEBHOOK_URL}}" \
+          --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}"
 
   "build:docker":
     cmds:
