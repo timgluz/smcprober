@@ -1,0 +1,12 @@
+{
+  "namespace": "weather",
+  "scrape_interval": 1800,
+  "log_level": "INFO",
+  "dotenv_path": ".env",
+  "weather": {
+    "endpoint": "https://api.openweathermap.org",
+    "api_path": "data/4.0",
+    "token_env": "OPENWEATHERMAP_TOKEN",
+    "locations": [{"name": "Ludwigshafen", "lat": 49.4811, "lon": 8.4353}]
+  }
+}
