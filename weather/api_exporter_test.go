@@ -26,6 +26,8 @@ func newTestRegistry(t *testing.T) *metric.NamespacedRegistry {
 	return metric.NewNamespacedRegistry(t.Name(), slog.Default())
 }
 
+const testLocation = "Ludwigshafen"
+
 func TestWeatherExporter_UpdateMetrics_Success(t *testing.T) {
 	reg := newTestRegistry(t)
 	mock := &mockProvider{
@@ -36,7 +38,7 @@ func TestWeatherExporter_UpdateMetrics_Success(t *testing.T) {
 		},
 	}
 	cfg := Config{
-		Locations: []Location{{Name: "Ludwigshafen", Lat: 49.4811, Lon: 8.4353}},
+		Locations: []Location{{Name: testLocation, Lat: 49.4811, Lon: 8.4353}},
 	}
 	exp := NewWeatherExporterWithRegistry(cfg, mock, reg, slog.Default())
 	exp.updateMetrics(context.Background())
@@ -59,7 +61,7 @@ func TestWeatherExporter_UpdateMetrics_ProviderError(t *testing.T) {
 	reg := newTestRegistry(t)
 	mock := &mockProvider{err: fmt.Errorf("network error")}
 	cfg := Config{
-		Locations: []Location{{Name: "Ludwigshafen", Lat: 49.4811, Lon: 8.4353}},
+		Locations: []Location{{Name: testLocation, Lat: 49.4811, Lon: 8.4353}},
 	}
 	exp := NewWeatherExporterWithRegistry(cfg, mock, reg, slog.Default())
 	exp.updateMetrics(context.Background()) // must not panic
@@ -72,29 +74,17 @@ func TestWeatherExporter_UpdateMetrics_ProviderError(t *testing.T) {
 
 func TestWeatherExporter_UpdateMetrics_MultipleLocations(t *testing.T) {
 	reg := newTestRegistry(t)
-	callCount := 0
-	// first call succeeds, second fails
-	mock := &mockProvider{}
-
 	cfg := Config{
 		Locations: []Location{
-			{Name: "Ludwigshafen", Lat: 49.4811, Lon: 8.4353},
+			{Name: testLocation, Lat: 49.4811, Lon: 8.4353},
 			{Name: "Berlin", Lat: 52.52, Lon: 13.405},
 		},
 	}
 
-	// Use a custom mock that fails on second call
-	type twoCallMock struct {
-		calls int
-	}
-	_ = callCount
-	_ = mock
-
-	// Simplest approach: call updateMetrics with a mock that always errors,
-	// just verify we get 2 provider calls and no panic
+	// Both locations error — verify the loop does not short-circuit (2 calls, no panic)
 	errMock := &mockProvider{err: fmt.Errorf("all fail")}
-	exp2 := NewWeatherExporterWithRegistry(cfg, errMock, reg, slog.Default())
-	exp2.updateMetrics(context.Background())
+	exp := NewWeatherExporterWithRegistry(cfg, errMock, reg, slog.Default())
+	exp.updateMetrics(context.Background())
 
 	if errMock.calls != 2 {
 		t.Errorf("provider called %d times with 2 locations, want 2", errMock.calls)

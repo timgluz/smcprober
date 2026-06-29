@@ -11,6 +11,8 @@ import (
 
 var ErrInvalidDataType = fmt.Errorf("weather: invalid data type for converter")
 
+const locationLabel = "location"
+
 // WeatherInfoConverter — static location_info gauge
 type WeatherInfoConverter struct{}
 
@@ -29,10 +31,10 @@ func (c *WeatherInfoConverter) Convert(registry metric.Registry, data any) error
 	gauge := registry.GetOrCreateGaugeVec(
 		"location_info",
 		"Static information about the weather location",
-		[]string{"location", "lat", "lon", "country"},
+		[]string{locationLabel, "lat", "lon", "country"},
 	)
 	gauge.With(prometheus.Labels{
-		"location": cw.Name,
+		locationLabel: cw.Name,
 		"lat":      strconv.FormatFloat(cw.Lat, 'f', 4, 64),
 		"lon":      strconv.FormatFloat(cw.Lon, 'f', 4, 64),
 		"country":  cw.Country,
@@ -56,7 +58,7 @@ func (c *WeatherMetricsConverter) Convert(registry metric.Registry, data any) er
 	}
 
 	set := func(name, help string, value float64) {
-		registry.GetOrCreateGaugeVec(name, help, []string{"location"}).
+		registry.GetOrCreateGaugeVec(name, help, []string{locationLabel}).
 			WithLabelValues(cw.Name).Set(value)
 	}
 

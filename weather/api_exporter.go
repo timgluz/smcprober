@@ -31,12 +31,12 @@ func NewWeatherExporterWithRegistry(config Config, provider Provider, registry m
 	requestCounter := registry.GetOrCreateCounterVec(
 		"api_requests_total",
 		"Total API requests to OpenWeatherMap",
-		[]string{"location"},
+		[]string{locationLabel},
 	)
 	errorCounter := registry.GetOrCreateCounterVec(
 		"api_errors_total",
 		"Total API errors from OpenWeatherMap",
-		[]string{"location", "type"},
+		[]string{locationLabel, "type"},
 	)
 
 	return &WeatherExporter{
