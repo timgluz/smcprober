@@ -1,0 +1,30 @@
+{{- if and .Values.weather.enabled .Values.weather.serviceMonitor.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "helm.fullname" . }}-weather
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weather-exporter
+    {{- with .Values.weather.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "helm.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: weather-exporter
+  endpoints:
+    - port: http-weather
+      path: {{ .Values.weather.serviceMonitor.path }}
+      {{- if .Values.weather.serviceMonitor.interval }}
+      interval: {{ .Values.weather.serviceMonitor.interval }}
+      {{- end }}
+      {{- if .Values.weather.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.weather.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.weather.serviceMonitor.honorLabels }}
+      honorLabels: {{ .Values.weather.serviceMonitor.honorLabels }}
+      {{- end }}
+{{- end }}

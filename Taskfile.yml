@@ -62,13 +62,31 @@ tasks:
       - echo "Fetching data from SmartCitizen API..."
       - go run cmd/smcdownload/main.go --config configs/config.json --dotenv .env
 
+  "run:weather":
+    desc: Run weather exporter locally (port 8081)
+    cmds:
+      - go run cmd/smcweather/main.go --config configs/config-weather-dev.json --dotenv .env
+
+  "smoke:weather":
+    desc: Smoke test a running weather exporter (run task run:weather first)
+    cmds:
+      - curl -sf http://localhost:8081/healthz
+      - curl -sf http://localhost:8081/readyz
+      - curl -sf http://localhost:8081/metrics | grep -c weather_temperature
+      - curl -sf http://localhost:8081/metrics | grep -c weather_uv_index
+      - curl -sf http://localhost:8081/metrics | grep -c weather_location_info
+
   "lint:go":
     desc: Run golangci-lint to check code quality
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - golangci-lint run ./...
 
   "lint:go:fix":
     desc: Run golangci-lint and automatically fix issues
+    env:
+      CGO_ENABLED: "0"
     cmds:
       - golangci-lint run --fix ./...
 

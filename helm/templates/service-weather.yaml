@@ -1,0 +1,20 @@
+{{- if .Values.weather.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "helm.fullname" . }}-weather
+  namespace: "{{ .Values.namespace }}"
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+    app.kubernetes.io/component: weather-exporter
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http-weather
+      protocol: TCP
+      name: http-weather
+  selector:
+    {{- include "helm.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: weather-exporter
+{{- end }}
