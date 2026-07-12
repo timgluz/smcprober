@@ -12,6 +12,13 @@ const (
 	DefaultClimateNormScrapeInterval = 86400 // norms barely change day to day — refetch once daily
 	DefaultClimateNormalYears        = 30    // WMO-standard climate normal period length
 	DefaultClimateNormalWindowDays   = 3     // +/- days around the target day-of-year to widen the sample
+
+	// MaxClimateNormalWindowDays is the largest window that can ever be
+	// meaningful: day-of-year distance is circular over a 366-day year, so
+	// no row is ever more than 183 days from any target date. Any
+	// configured value at or above this makes the day-of-year filter match
+	// every row, silently turning a "seasonal window" into "all data".
+	MaxClimateNormalWindowDays = 183
 )
 
 type Location struct {
@@ -54,5 +61,8 @@ func (c *Config) ApplyDefaults() {
 	}
 	if c.ClimateNormalWindowDays <= 0 {
 		c.ClimateNormalWindowDays = DefaultClimateNormalWindowDays
+	}
+	if c.ClimateNormalWindowDays > MaxClimateNormalWindowDays {
+		c.ClimateNormalWindowDays = MaxClimateNormalWindowDays
 	}
 }

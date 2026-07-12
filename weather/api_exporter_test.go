@@ -133,8 +133,8 @@ func TestWeatherExporter_UpdateClimateNormals_ProviderError(t *testing.T) {
 	exp := NewWeatherExporterWithRegistry(cfg, mock, reg, slog.Default())
 	exp.updateClimateNormals(context.Background()) // must not panic
 
-	if _, ok := reg.GetCollectorByName("api_errors_total"); !ok {
-		t.Error("api_errors_total counter not registered")
+	if _, ok := reg.GetCollectorByName("climate_normal_errors_total"); !ok {
+		t.Error("climate_normal_errors_total counter not registered")
 	}
 }
 
@@ -150,8 +150,8 @@ func TestWeatherExporter_UpdateClimateNormals_NoData(t *testing.T) {
 	if _, ok := reg.GetCollectorByName("climate_normal_temperature_average_mean"); ok {
 		t.Error("no gauge should be emitted when the provider returns ErrNoClimateData")
 	}
-	if _, ok := reg.GetCollectorByName("api_errors_total"); !ok {
-		t.Error("api_errors_total counter not registered")
+	if _, ok := reg.GetCollectorByName("climate_normal_errors_total"); !ok {
+		t.Error("climate_normal_errors_total counter not registered")
 	}
 }
 

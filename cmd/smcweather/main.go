@@ -115,6 +115,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Best-effort climate-normals connectivity check. Unlike Ping above,
+	// failure here must NOT exit the process — Open-Meteo being unreachable
+	// (e.g. a misconfigured climate_endpoint) shouldn't take down current-weather
+	// metrics — but it gives an early, visible startup log instead of the
+	// problem only surfacing later via absent weather_climate_normal_* gauges.
+	if len(appConfig.Weather.Locations) > 0 {
+		loc := appConfig.Weather.Locations[0]
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		now := time.Now().UTC()
+		if _, err := provider.GetClimateNormals(checkCtx, loc.Lat, loc.Lon, now.Month(), now.Day()); err != nil {
+			logger.Warn("Startup check: failed to reach Open-Meteo climate API — climate normal metrics may be unavailable",
+				"error", err)
+		}
+		checkCancel()
+	}
+
 	exporter := weather.NewWeatherExporterWithRegistry(appConfig.Weather, provider, registry, logger)
 
 	// Create context that can be cancelled

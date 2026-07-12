@@ -19,6 +19,7 @@ type WeatherExporter struct {
 	requestCounter        *prometheus.CounterVec
 	errorCounter          *prometheus.CounterVec
 	climateRequestCounter *prometheus.CounterVec
+	climateErrorCounter   *prometheus.CounterVec
 }
 
 func NewWeatherExporter(namespace string, config Config, provider Provider, logger *slog.Logger) *WeatherExporter {
@@ -45,6 +46,11 @@ func NewWeatherExporterWithRegistry(config Config, provider Provider, registry m
 		"Total climate normals API requests to Open-Meteo",
 		[]string{locationLabel},
 	)
+	climateErrorCounter := registry.GetOrCreateCounterVec(
+		"climate_normal_errors_total",
+		"Total climate normals API errors from Open-Meteo",
+		[]string{locationLabel, "type"},
+	)
 
 	return &WeatherExporter{
 		config:                config,
@@ -55,6 +61,7 @@ func NewWeatherExporterWithRegistry(config Config, provider Provider, registry m
 		requestCounter:        requestCounter,
 		errorCounter:          errorCounter,
 		climateRequestCounter: climateRequestCounter,
+		climateErrorCounter:   climateErrorCounter,
 	}
 }
 
@@ -79,25 +86,11 @@ func (e *WeatherExporter) updateMetrics(ctx context.Context) {
 }
 
 func (e *WeatherExporter) Start(ctx context.Context, interval time.Duration) {
-	ticker := time.NewTicker(interval)
-	defer ticker.Stop()
-
-	// Immediate first call
-	e.updateMetrics(ctx)
-
-	for {
-		select {
-		case <-ctx.Done():
-			e.logger.Info("Stopping weather metrics updater", "reason", ctx.Err())
-			return
-		case <-ticker.C:
-			e.updateMetrics(ctx)
-		}
-	}
+	e.runPeriodic(ctx, interval, "weather metrics", e.updateMetrics)
 }
 
 func (e *WeatherExporter) updateClimateNormals(ctx context.Context) {
-	now := time.Now()
+	now := time.Now().UTC()
 	for _, loc := range e.config.Locations {
 		e.climateRequestCounter.WithLabelValues(loc.Name).Inc()
 
@@ -105,10 +98,10 @@ func (e *WeatherExporter) updateClimateNormals(ctx context.Context) {
 		if err != nil {
 			if errors.Is(err, ErrNoClimateData) {
 				e.logger.Warn("No climate normal data available yet", "location", loc.Name, "error", err)
-				e.errorCounter.WithLabelValues(loc.Name, "climate_no_data").Inc()
+				e.climateErrorCounter.WithLabelValues(loc.Name, "no_data").Inc()
 			} else {
 				e.logger.Error("Failed to get climate normals", "location", loc.Name, "error", err)
-				e.errorCounter.WithLabelValues(loc.Name, "climate_fetch_error").Inc()
+				e.climateErrorCounter.WithLabelValues(loc.Name, "fetch_error").Inc()
 			}
 			continue // do NOT abort the loop — other locations should still be processed
 		}
@@ -117,25 +110,32 @@ func (e *WeatherExporter) updateClimateNormals(ctx context.Context) {
 
 		if err := e.converter.Convert(e.registry, cn); err != nil {
 			e.logger.Error("Failed to convert climate normal metrics", "location", loc.Name, "error", err)
-			e.errorCounter.WithLabelValues(loc.Name, "climate_convert_error").Inc()
+			e.climateErrorCounter.WithLabelValues(loc.Name, "convert_error").Inc()
 		}
 	}
 }
 
 func (e *WeatherExporter) StartClimateNormals(ctx context.Context, interval time.Duration) {
+	e.runPeriodic(ctx, interval, "climate normals", e.updateClimateNormals)
+}
+
+// runPeriodic calls update immediately, then again every interval, until ctx
+// is cancelled. Shared by Start and StartClimateNormals, which differ only
+// in cadence and which update function they drive.
+func (e *WeatherExporter) runPeriodic(ctx context.Context, interval time.Duration, name string, update func(context.Context)) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
 	// Immediate first call
-	e.updateClimateNormals(ctx)
+	update(ctx)
 
 	for {
 		select {
 		case <-ctx.Done():
-			e.logger.Info("Stopping climate normals updater", "reason", ctx.Err())
+			e.logger.Info("Stopping updater", "name", name, "reason", ctx.Err())
 			return
 		case <-ticker.C:
-			e.updateClimateNormals(ctx)
+			update(ctx)
 		}
 	}
 }

@@ -16,11 +16,12 @@ import (
 )
 
 type HTTPProvider struct {
-	config   Config
-	apiKey   string
-	client   *http.Client
-	registry metric.Registry
-	logger   *slog.Logger
+	config        Config
+	apiKey        string
+	client        *http.Client // OpenWeatherMap (current weather)
+	climateClient *http.Client // Open-Meteo (climate normals) — separate client/timeout/histogram: different vendor, much larger payload
+	registry      metric.Registry
+	logger        *slog.Logger
 }
 
 func NewHTTPProvider(config Config, apiKey string, client *http.Client, registry metric.Registry, logger *slog.Logger) *HTTPProvider {
@@ -46,12 +47,28 @@ func NewHTTPProvider(config Config, apiKey string, client *http.Client, registry
 			"transport_type", fmt.Sprintf("%T", client.Transport))
 	}
 
+	climateHistogram := registry.GetOrCreateHistogramVec(
+		"climate_api_request_duration_seconds",
+		"Duration of HTTP requests to Open-Meteo Climate API",
+		[]float64{0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0, 60.0},
+		[]string{"endpoint", "status", "method"},
+	)
+	climateClient := httpclient.NewDefaultHTTPClient()
+	climateClient.Timeout = 60 * time.Second // archive queries fetch far more data than a current-weather call
+	if transport, ok := climateClient.Transport.(*http.Transport); ok {
+		climateClient.Transport = httpclient.NewInstrumentedTransport(transport, climateHistogram)
+	} else {
+		logger.Warn("Climate HTTP transport is not *http.Transport; metrics instrumentation not applied",
+			"transport_type", fmt.Sprintf("%T", climateClient.Transport))
+	}
+
 	return &HTTPProvider{
-		config:   config,
-		apiKey:   apiKey,
-		client:   client,
-		registry: registry,
-		logger:   logger,
+		config:        config,
+		apiKey:        apiKey,
+		client:        client,
+		climateClient: climateClient,
+		registry:      registry,
+		logger:        logger,
 	}
 }
 

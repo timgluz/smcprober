@@ -37,7 +37,7 @@ func (p *HTTPProvider) GetClimateNormals(ctx context.Context, lat, lon float64, 
 		return ClimateNormals{}, fmt.Errorf("weather: failed to build URL: %w", err)
 	}
 
-	endDate := time.Now().AddDate(0, 0, -1) // yesterday — today's data isn't finalized yet
+	endDate := time.Now().UTC().AddDate(0, 0, -1) // yesterday — today's data isn't finalized yet
 	startDate := endDate.AddDate(-p.config.ClimateNormalYears, 0, 0)
 
 	params := url.Values{}
@@ -46,6 +46,10 @@ func (p *HTTPProvider) GetClimateNormals(ctx context.Context, lat, lon float64, 
 	params.Set("start_date", startDate.Format("2006-01-02"))
 	params.Set("end_date", endDate.Format("2006-01-02"))
 	params.Set("daily", "temperature_2m_max,temperature_2m_min,temperature_2m_mean")
+	// Pin daily aggregation to UTC explicitly — Open-Meteo defaults to GMT day
+	// boundaries when omitted, but leaving it implicit invites drift if that
+	// default ever changes. All date matching below is UTC-anchored too.
+	params.Set("timezone", "UTC")
 
 	fullURL := endpoint + "?" + params.Encode()
 
@@ -54,7 +58,7 @@ func (p *HTTPProvider) GetClimateNormals(ctx context.Context, lat, lon float64, 
 		return ClimateNormals{}, fmt.Errorf("weather: failed to create request: %w", err)
 	}
 
-	resp, err := p.client.Do(req)
+	resp, err := p.climateClient.Do(req)
 	if err != nil {
 		return ClimateNormals{}, fmt.Errorf("weather: climate normals request failed: %w", err)
 	}
@@ -131,6 +135,8 @@ func (p *HTTPProvider) GetClimateNormals(ctx context.Context, lat, lon float64, 
 	}
 
 	return ClimateNormals{
+		Lat:             lat,
+		Lon:             lon,
 		Month:           month,
 		Day:             day,
 		TempRecordMin:   recordMin,
@@ -142,23 +148,31 @@ func (p *HTTPProvider) GetClimateNormals(ctx context.Context, lat, lon float64, 
 	}, nil
 }
 
+// leapReferenceYear is used to compute a year-independent day-of-year
+// ordinal for both the target date and each row's date. 2000 is a leap
+// year, so remapping any (month, day) — including Feb 29 — into it always
+// produces a valid calendar date, unlike reconstructing the target date in
+// an arbitrary row year (which silently rolls Feb 29 over to Mar 1 in a
+// non-leap year, producing an asymmetric window).
+const leapReferenceYear = 2000
+const daysInLeapReferenceYear = 366
+
 // withinDayOfYearWindow reports whether rowDate falls within windowDays of
-// the target month/day, checked against the target placed in rowDate's own
-// year and the adjacent years. Using real date subtraction (rather than
-// time.Time.YearDay() comparison) avoids drift across leap-year boundaries
-// and correctly handles windows that wrap the Dec 31 / Jan 1 boundary.
+// the target month/day, comparing day-of-year ordinals in a fixed leap
+// reference year and taking the shorter distance around the year boundary
+// (so windows near Dec 31 / Jan 1 wrap correctly). Remapping into a fixed
+// leap year — rather than reconstructing the target date in rowDate's own
+// year — avoids both leap-year drift and the Feb 29 normalization bug.
 func withinDayOfYearWindow(rowDate time.Time, month time.Month, day, windowDays int) bool {
-	rowYear := rowDate.Year()
-	best := -1
-	for _, y := range []int{rowYear - 1, rowYear, rowYear + 1} {
-		candidate := time.Date(y, month, day, 0, 0, 0, 0, time.UTC)
-		diff := int(rowDate.Sub(candidate).Hours() / 24)
-		if diff < 0 {
-			diff = -diff
-		}
-		if best == -1 || diff < best {
-			best = diff
-		}
+	target := time.Date(leapReferenceYear, month, day, 0, 0, 0, 0, time.UTC).YearDay()
+	row := time.Date(leapReferenceYear, rowDate.Month(), rowDate.Day(), 0, 0, 0, 0, time.UTC).YearDay()
+
+	diff := target - row
+	if diff < 0 {
+		diff = -diff
 	}
-	return best <= windowDays
+	if wrapped := daysInLeapReferenceYear - diff; wrapped < diff {
+		diff = wrapped
+	}
+	return diff <= windowDays
 }

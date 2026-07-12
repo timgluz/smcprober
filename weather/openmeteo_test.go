@@ -211,6 +211,37 @@ func TestHTTPProvider_GetClimateNormals_LeapYearDrift(t *testing.T) {
 	}
 }
 
+func TestHTTPProvider_GetClimateNormals_Feb29Target(t *testing.T) {
+	// Target Feb 29 (only possible when "today" is itself a leap day) with a
+	// 3-day window, checked against rows from 2027 — a NON-leap year. A naive
+	// time.Date(2027, February, 29, ...) silently rolls over to 2027-03-01,
+	// which would shift the window to Feb26-Mar4 instead of the correct
+	// symmetric Feb26-Mar3.
+	fixture := `{
+        "daily": {
+            "time": ["2027-02-25", "2027-02-26", "2027-03-03", "2027-03-04"],
+            "temperature_2m_min":  [-999, 5, 7, -999],
+            "temperature_2m_max":  [999, 15, 17, 999],
+            "temperature_2m_mean": [0, 10, 12, 0]
+        }
+    }`
+	provider := newClimateTestProvider(t, fixture, func(cfg *weather.Config) {
+		cfg.ClimateNormalWindowDays = 3
+	})
+
+	cn, err := provider.GetClimateNormals(context.Background(), 49.4811, 8.4353, time.February, 29)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if cn.TempRecordMin != 5 || cn.TempRecordMax != 17 {
+		t.Errorf("RecordMin/RecordMax = %v/%v, want 5/17 (Feb 25 and Mar 4, both at distance 4, must be excluded)", cn.TempRecordMin, cn.TempRecordMax)
+	}
+	if cn.SampleYears != 1 {
+		t.Errorf("SampleYears = %d, want 1", cn.SampleYears)
+	}
+}
+
 func TestHTTPProvider_GetClimateNormals_NoMatchingData(t *testing.T) {
 	fixture := `{
         "daily": {

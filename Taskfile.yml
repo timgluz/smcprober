@@ -77,7 +77,15 @@ tasks:
       - curl -sf http://localhost:8081/metrics | grep -c weather_location_info
       # climate_normal_* metrics come from Open-Meteo (no key required) and are populated
       # on the first request, same as the other gauges above — no need to wait a day.
-      - curl -sf http://localhost:8081/metrics | grep -c weather_climate_normal_temperature_average_mean
+      # The climate fetch is a much larger request than the others above, so it may
+      # still be in flight when this task starts; poll briefly instead of a single check.
+      - |
+        for i in $(seq 1 15); do
+          count=$(curl -sf http://localhost:8081/metrics | grep -c weather_climate_normal_temperature_average_mean || true)
+          [ "$count" -gt 0 ] && break
+          sleep 1
+        done
+        [ "$count" -gt 0 ] || (echo "weather_climate_normal_temperature_average_mean never appeared" && exit 1)
       - curl -sf http://localhost:8081/metrics | grep -c weather_climate_normal_temperature_record_max
 
   "lint:go":
