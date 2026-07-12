@@ -119,8 +119,8 @@ func TestWeatherExporter_UpdateClimateNormals_Success(t *testing.T) {
 	if mock.climateCalls != 1 {
 		t.Errorf("provider called %d times, want 1", mock.climateCalls)
 	}
-	if _, ok := reg.GetCollectorByName("climate_normal_temperature_average_mean"); !ok {
-		t.Error("climate_normal_temperature_average_mean gauge not registered")
+	if _, ok := reg.GetCollectorByName("stat_temperature_daily_mean"); !ok {
+		t.Error("stat_temperature_daily_mean gauge not registered")
 	}
 }
 
@@ -147,7 +147,7 @@ func TestWeatherExporter_UpdateClimateNormals_NoData(t *testing.T) {
 	exp := NewWeatherExporterWithRegistry(cfg, mock, reg, slog.Default())
 	exp.updateClimateNormals(context.Background()) // must not panic
 
-	if _, ok := reg.GetCollectorByName("climate_normal_temperature_average_mean"); ok {
+	if _, ok := reg.GetCollectorByName("stat_temperature_daily_mean"); ok {
 		t.Error("no gauge should be emitted when the provider returns ErrNoClimateData")
 	}
 	if _, ok := reg.GetCollectorByName("climate_normal_errors_total"); !ok {

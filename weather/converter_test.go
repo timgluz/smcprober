@@ -128,12 +128,12 @@ func TestClimateNormConverter_Convert(t *testing.T) {
 	}
 
 	for name, want := range map[string]float64{
-		"climate_normal_temperature_record_min":   cn.TempRecordMin,
-		"climate_normal_temperature_record_max":   cn.TempRecordMax,
-		"climate_normal_temperature_average_min":  cn.TempAverageMin,
-		"climate_normal_temperature_average_max":  cn.TempAverageMax,
-		"climate_normal_temperature_average_mean": cn.TempAverageMean,
-		"climate_normal_sample_years":             float64(cn.SampleYears),
+		"stat_temperature_daily_record_min":  cn.TempRecordMin,
+		"stat_temperature_daily_record_max":  cn.TempRecordMax,
+		"stat_temperature_daily_average_min": cn.TempAverageMin,
+		"stat_temperature_daily_average_max": cn.TempAverageMax,
+		"stat_temperature_daily_mean":        cn.TempAverageMean,
+		"climate_normal_sample_years":        float64(cn.SampleYears),
 	} {
 		collector, ok := reg.GetCollectorByName(name)
 		if !ok {

@@ -35,9 +35,9 @@ func (c *WeatherInfoConverter) Convert(registry metric.Registry, data any) error
 	)
 	gauge.With(prometheus.Labels{
 		locationLabel: cw.Name,
-		"lat":      strconv.FormatFloat(cw.Lat, 'f', 4, 64),
-		"lon":      strconv.FormatFloat(cw.Lon, 'f', 4, 64),
-		"country":  cw.Country,
+		"lat":         strconv.FormatFloat(cw.Lat, 'f', 4, 64),
+		"lon":         strconv.FormatFloat(cw.Lon, 'f', 4, 64),
+		"country":     cw.Country,
 	}).Set(1)
 	return nil
 }
@@ -100,11 +100,11 @@ func (c *ClimateNormConverter) Convert(registry metric.Registry, data any) error
 			WithLabelValues(cn.Name).Set(value)
 	}
 
-	set("climate_normal_temperature_record_min", "Historical record low temperature for this day of year, in Celsius", cn.TempRecordMin)
-	set("climate_normal_temperature_record_max", "Historical record high temperature for this day of year, in Celsius", cn.TempRecordMax)
-	set("climate_normal_temperature_average_min", "Historical average daily minimum temperature for this day of year, in Celsius", cn.TempAverageMin)
-	set("climate_normal_temperature_average_max", "Historical average daily maximum temperature for this day of year, in Celsius", cn.TempAverageMax)
-	set("climate_normal_temperature_average_mean", "Historical average daily mean temperature for this day of year, in Celsius", cn.TempAverageMean)
+	set("stat_temperature_daily_record_min", "Historical record low temperature for this day of year, in Celsius", cn.TempRecordMin)
+	set("stat_temperature_daily_record_max", "Historical record high temperature for this day of year, in Celsius", cn.TempRecordMax)
+	set("stat_temperature_daily_average_min", "Historical average daily minimum temperature for this day of year, in Celsius", cn.TempAverageMin)
+	set("stat_temperature_daily_average_max", "Historical average daily maximum temperature for this day of year, in Celsius", cn.TempAverageMax)
+	set("stat_temperature_daily_mean", "Historical average daily mean temperature for this day of year, in Celsius", cn.TempAverageMean)
 	set("climate_normal_sample_years", "Number of distinct years contributing to this climate normal", float64(cn.SampleYears))
 	return nil
 }
