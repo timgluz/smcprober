@@ -122,6 +122,7 @@ tasks:
           --set alertmanager.enabled=true \
           --set alertmanager.webhooks.default="{{.NTFY_DEFAULT_WEBHOOK_URL}}" \
           --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}" \
+          {{.CLI_ARGS}} \
           > smcprober.yaml
       - kubectl apply -f smcprober.yaml --dry-run=server
 
@@ -141,7 +142,8 @@ tasks:
           --set serviceMonitor.enabled=true \
           --set alertmanager.enabled=true \
           --set alertmanager.webhooks.default="{{.NTFY_DEFAULT_WEBHOOK_URL}}" \
-          --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}"
+          --set alertmanager.webhooks.critical="{{.NTFY_CRITICAL_WEBHOOK_URL}}" \
+          {{.CLI_ARGS}}
 
   "build:docker":
     cmds:
