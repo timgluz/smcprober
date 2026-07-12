@@ -2,6 +2,7 @@ package weather
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -10,13 +11,14 @@ import (
 )
 
 type WeatherExporter struct {
-	config         Config
-	provider       Provider
-	registry       metric.Registry
-	converter      metric.Converter
-	logger         *slog.Logger
-	requestCounter *prometheus.CounterVec
-	errorCounter   *prometheus.CounterVec
+	config                Config
+	provider              Provider
+	registry              metric.Registry
+	converter             metric.Converter
+	logger                *slog.Logger
+	requestCounter        *prometheus.CounterVec
+	errorCounter          *prometheus.CounterVec
+	climateRequestCounter *prometheus.CounterVec
 }
 
 func NewWeatherExporter(namespace string, config Config, provider Provider, logger *slog.Logger) *WeatherExporter {
@@ -26,7 +28,7 @@ func NewWeatherExporter(namespace string, config Config, provider Provider, logg
 
 func NewWeatherExporterWithRegistry(config Config, provider Provider, registry metric.Registry, logger *slog.Logger) *WeatherExporter {
 	converter := metric.NewCombinedConverter()
-	converter.Add(NewWeatherInfoConverter(), NewWeatherMetricsConverter())
+	converter.Add(NewWeatherInfoConverter(), NewWeatherMetricsConverter(), NewClimateNormConverter())
 
 	requestCounter := registry.GetOrCreateCounterVec(
 		"api_requests_total",
@@ -38,15 +40,21 @@ func NewWeatherExporterWithRegistry(config Config, provider Provider, registry m
 		"Total API errors from OpenWeatherMap",
 		[]string{locationLabel, "type"},
 	)
+	climateRequestCounter := registry.GetOrCreateCounterVec(
+		"climate_normal_requests_total",
+		"Total climate normals API requests to Open-Meteo",
+		[]string{locationLabel},
+	)
 
 	return &WeatherExporter{
-		config:         config,
-		provider:       provider,
-		registry:       registry,
-		converter:      converter,
-		logger:         logger,
-		requestCounter: requestCounter,
-		errorCounter:   errorCounter,
+		config:                config,
+		provider:              provider,
+		registry:              registry,
+		converter:             converter,
+		logger:                logger,
+		requestCounter:        requestCounter,
+		errorCounter:          errorCounter,
+		climateRequestCounter: climateRequestCounter,
 	}
 }
 
@@ -84,6 +92,50 @@ func (e *WeatherExporter) Start(ctx context.Context, interval time.Duration) {
 			return
 		case <-ticker.C:
 			e.updateMetrics(ctx)
+		}
+	}
+}
+
+func (e *WeatherExporter) updateClimateNormals(ctx context.Context) {
+	now := time.Now()
+	for _, loc := range e.config.Locations {
+		e.climateRequestCounter.WithLabelValues(loc.Name).Inc()
+
+		cn, err := e.provider.GetClimateNormals(ctx, loc.Lat, loc.Lon, now.Month(), now.Day())
+		if err != nil {
+			if errors.Is(err, ErrNoClimateData) {
+				e.logger.Warn("No climate normal data available yet", "location", loc.Name, "error", err)
+				e.errorCounter.WithLabelValues(loc.Name, "climate_no_data").Inc()
+			} else {
+				e.logger.Error("Failed to get climate normals", "location", loc.Name, "error", err)
+				e.errorCounter.WithLabelValues(loc.Name, "climate_fetch_error").Inc()
+			}
+			continue // do NOT abort the loop — other locations should still be processed
+		}
+
+		cn.Name = loc.Name // inject location name; provider leaves it empty
+
+		if err := e.converter.Convert(e.registry, cn); err != nil {
+			e.logger.Error("Failed to convert climate normal metrics", "location", loc.Name, "error", err)
+			e.errorCounter.WithLabelValues(loc.Name, "climate_convert_error").Inc()
+		}
+	}
+}
+
+func (e *WeatherExporter) StartClimateNormals(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	// Immediate first call
+	e.updateClimateNormals(ctx)
+
+	for {
+		select {
+		case <-ctx.Done():
+			e.logger.Info("Stopping climate normals updater", "reason", ctx.Err())
+			return
+		case <-ticker.C:
+			e.updateClimateNormals(ctx)
 		}
 	}
 }

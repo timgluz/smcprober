@@ -75,6 +75,10 @@ tasks:
       - curl -sf http://localhost:8081/metrics | grep -c weather_temperature
       - curl -sf http://localhost:8081/metrics | grep -c weather_uv_index
       - curl -sf http://localhost:8081/metrics | grep -c weather_location_info
+      # climate_normal_* metrics come from Open-Meteo (no key required) and are populated
+      # on the first request, same as the other gauges above — no need to wait a day.
+      - curl -sf http://localhost:8081/metrics | grep -c weather_climate_normal_temperature_average_mean
+      - curl -sf http://localhost:8081/metrics | grep -c weather_climate_normal_temperature_record_max
 
   "lint:go":
     desc: Run golangci-lint to check code quality
