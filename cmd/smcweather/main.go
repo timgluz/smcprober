@@ -23,11 +23,12 @@ import (
 const DefaultConfigPath = "configs/config-weather.json"
 
 type AppConfig struct {
-	Namespace      string         `json:"namespace"`
-	ScrapeInterval int            `json:"scrape_interval"`
-	LogLevel       string         `json:"log_level"`
-	DotEnvPath     string         `json:"dotenv_path"`
-	Weather        weather.Config `json:"weather"`
+	Namespace                 string         `json:"namespace"`
+	ScrapeInterval            int            `json:"scrape_interval"`
+	ClimateNormScrapeInterval int            `json:"climate_norm_scrape_interval"`
+	LogLevel                  string         `json:"log_level"`
+	DotEnvPath                string         `json:"dotenv_path"`
+	Weather                   weather.Config `json:"weather"`
 }
 
 func (c *AppConfig) ApplyDefaults() {
@@ -38,11 +39,18 @@ func (c *AppConfig) ApplyDefaults() {
 	if c.ScrapeInterval <= 0 {
 		c.ScrapeInterval = 1800 // Default to 30 minutes
 	}
+	if c.ClimateNormScrapeInterval <= 0 {
+		c.ClimateNormScrapeInterval = weather.DefaultClimateNormScrapeInterval
+	}
 	c.Weather.ApplyDefaults()
 }
 
 func (c *AppConfig) GetScrapeIntervalDuration() time.Duration {
 	return time.Duration(c.ScrapeInterval) * time.Second
+}
+
+func (c *AppConfig) GetClimateNormScrapeIntervalDuration() time.Duration {
+	return time.Duration(c.ClimateNormScrapeInterval) * time.Second
 }
 
 func (c *AppConfig) LogLevelValue() slog.Level {
@@ -107,14 +115,31 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Best-effort climate-normals connectivity check. Unlike Ping above,
+	// failure here must NOT exit the process — Open-Meteo being unreachable
+	// (e.g. a misconfigured climate_endpoint) shouldn't take down current-weather
+	// metrics — but it gives an early, visible startup log instead of the
+	// problem only surfacing later via absent weather_climate_normal_* gauges.
+	if len(appConfig.Weather.Locations) > 0 {
+		loc := appConfig.Weather.Locations[0]
+		checkCtx, checkCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		now := time.Now().UTC()
+		if _, err := provider.GetClimateNormals(checkCtx, loc.Lat, loc.Lon, now.Month(), now.Day()); err != nil {
+			logger.Warn("Startup check: failed to reach Open-Meteo climate API — climate normal metrics may be unavailable",
+				"error", err)
+		}
+		checkCancel()
+	}
+
 	exporter := weather.NewWeatherExporterWithRegistry(appConfig.Weather, provider, registry, logger)
 
 	// Create context that can be cancelled
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Start background updater with cancellable context
+	// Start background updaters with cancellable context
 	go exporter.Start(ctx, appConfig.GetScrapeIntervalDuration())
+	go exporter.StartClimateNormals(ctx, appConfig.GetClimateNormScrapeIntervalDuration())
 
 	// HTTP handlers
 	mux := http.NewServeMux()

@@ -58,7 +58,7 @@ func TestHTTPProvider_GetCurrentWeather(t *testing.T) {
 		Endpoint:  ts.URL,
 		APIPath:   "data/4.0",
 		TokenEnv:  "X",
-		Locations: []weather.Location{{Name: "Test", Lat: 49.4811, Lon: 8.4353}},
+		Locations: []weather.Location{{Name: testLocationName, Lat: 49.4811, Lon: 8.4353}},
 	}
 	provider := weather.NewHTTPProvider(cfg, "testkey", ts.Client(), reg, slog.Default())
 
@@ -92,7 +92,7 @@ func TestHTTPProvider_GetCurrentWeather_NonOKStatus(t *testing.T) {
 		Endpoint:  ts.URL,
 		APIPath:   "data/4.0",
 		TokenEnv:  "X",
-		Locations: []weather.Location{{Name: "Test", Lat: 49.4811, Lon: 8.4353}},
+		Locations: []weather.Location{{Name: testLocationName, Lat: 49.4811, Lon: 8.4353}},
 	}
 	provider := weather.NewHTTPProvider(cfg, "badkey", ts.Client(), reg, slog.Default())
 

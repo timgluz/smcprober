@@ -35,9 +35,9 @@ func (c *WeatherInfoConverter) Convert(registry metric.Registry, data any) error
 	)
 	gauge.With(prometheus.Labels{
 		locationLabel: cw.Name,
-		"lat":      strconv.FormatFloat(cw.Lat, 'f', 4, 64),
-		"lon":      strconv.FormatFloat(cw.Lon, 'f', 4, 64),
-		"country":  cw.Country,
+		"lat":         strconv.FormatFloat(cw.Lat, 'f', 4, 64),
+		"lon":         strconv.FormatFloat(cw.Lon, 'f', 4, 64),
+		"country":     cw.Country,
 	}).Set(1)
 	return nil
 }
@@ -73,5 +73,38 @@ func (c *WeatherMetricsConverter) Convert(registry metric.Registry, data any) er
 	set("uv_index", "UV index", cw.UVIndex)
 	set("sunrise_timestamp", "Sunrise time as Unix timestamp", float64(cw.Sunrise))
 	set("sunset_timestamp", "Sunset time as Unix timestamp", float64(cw.Sunset))
+	return nil
+}
+
+// ClimateNormConverter — 6 gauges summarizing historical temperature norms
+// for today's day-of-year, all with the "location" label.
+type ClimateNormConverter struct{}
+
+func NewClimateNormConverter() *ClimateNormConverter { return &ClimateNormConverter{} }
+
+func (c *ClimateNormConverter) Match(name string) bool {
+	return name == ClimateNormalsType
+}
+
+func (c *ClimateNormConverter) Convert(registry metric.Registry, data any) error {
+	cn, ok := data.(ClimateNormals)
+	if !ok {
+		return fmt.Errorf("%w: %v", ErrInvalidDataType, reflect.TypeOf(data))
+	}
+	if cn.SampleYears <= 0 {
+		return fmt.Errorf("%w: ClimateNormals has SampleYears <= 0, refusing to emit gauges from zero-sample data", ErrInvalidDataType)
+	}
+
+	set := func(name, help string, value float64) {
+		registry.GetOrCreateGaugeVec(name, help, []string{locationLabel}).
+			WithLabelValues(cn.Name).Set(value)
+	}
+
+	set("stat_temperature_daily_record_min", "Historical record low temperature for this day of year, in Celsius", cn.TempRecordMin)
+	set("stat_temperature_daily_record_max", "Historical record high temperature for this day of year, in Celsius", cn.TempRecordMax)
+	set("stat_temperature_daily_average_min", "Historical average daily minimum temperature for this day of year, in Celsius", cn.TempAverageMin)
+	set("stat_temperature_daily_average_max", "Historical average daily maximum temperature for this day of year, in Celsius", cn.TempAverageMax)
+	set("stat_temperature_daily_mean", "Historical average daily mean temperature for this day of year, in Celsius", cn.TempAverageMean)
+	set("climate_normal_sample_years", "Number of distinct years contributing to this climate normal", float64(cn.SampleYears))
 	return nil
 }

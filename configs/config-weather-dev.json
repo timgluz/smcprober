@@ -1,12 +1,17 @@
 {
   "namespace": "weather",
   "scrape_interval": 1800,
+  "climate_norm_scrape_interval": 86400,
   "log_level": "INFO",
   "dotenv_path": ".env",
   "weather": {
     "endpoint": "https://api.openweathermap.org",
     "api_path": "data/4.0",
     "token_env": "OPENWEATHERMAP_TOKEN",
+    "climate_endpoint": "https://archive-api.open-meteo.com",
+    "climate_api_path": "v1/archive",
+    "climate_normal_years": 30,
+    "climate_normal_window_days": 3,
     "locations": [{"name": "Ludwigshafen", "lat": 49.4811, "lon": 8.4353}]
   }
 }
