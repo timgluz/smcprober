@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/redhat-developer/vscode-tekton/refs/heads/main/scheme/tekton.dev/v1_Task.json
+# Resolves the image tag for a build.
+#
+# The VERSION file is the source of truth. Tagged release builds must check out a
+# git tag that matches VERSION, and the image is published under that immutable
+# tag. Non-release builds (pushes to main) publish the moving "latest" tag.
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: resolve-version
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      type: string
+      description: Git repository or URL to clone.
+    - name: release-tag
+      type: string
+      description: >-
+        Git tag being released (e.g. v0.0.3). Must match the VERSION file in the
+        repository. Leave empty for non-release builds, which resolve "latest".
+      default: ""
+  results:
+    - name: version
+      description: Image tag to build — the released version, or "latest".
+    - name: is-release
+      description: '"true" for tagged release builds, "false" otherwise.'
+  steps:
+    - name: resolve
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -e
+
+        RELEASE_TAG="$(params.release-tag)"
+
+        if [ -z "${RELEASE_TAG}" ]; then
+          echo "No release tag supplied; resolving the moving 'latest' tag."
+          printf '%s' "latest" > "$(results.version.path)"
+          printf '%s' "false" > "$(results.is-release.path)"
+          exit 0
+        fi
+
+        echo "Resolving version for release tag ${RELEASE_TAG}"
+        git clone --depth 1 --branch "${RELEASE_TAG}" \
+          "https://github.com/$(params.repo).git" /workspace/source
+
+        FILE_VERSION="$(tr -d '[:space:]' < /workspace/source/VERSION)"
+        if [ -z "${FILE_VERSION}" ]; then
+          echo "VERSION file is missing or empty in the repository" >&2
+          exit 1
+        fi
+
+        if [ "${FILE_VERSION}" != "${RELEASE_TAG}" ]; then
+          echo "VERSION file (${FILE_VERSION}) does not match release tag (${RELEASE_TAG})" >&2
+          echo "Bump VERSION before tagging a release." >&2
+          exit 1
+        fi
+
+        printf '%s' "${FILE_VERSION}" > "$(results.version.path)"
+        printf '%s' "true" > "$(results.is-release.path)"
+        echo "Resolved release version: ${FILE_VERSION}"

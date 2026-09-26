@@ -58,5 +58,8 @@ Each binary takes `--config <json-file>` and optional `--dotenv <env-file>`. The
 - Docker image uses `nerdctl` (not `docker`) — see `DOCKER_BIN` var in Taskfile
 - Helm chart in `helm/` with ServiceMonitor support for Prometheus Operator
 - Tekton CI pipelines in `helm/pipelines/` for multi-arch builds
+- `VERSION` is the source of truth for releases; the pipeline rejects a git tag that
+  does not match it. Pushing a `vX.Y.Z` tag publishes that immutable image tag (plus
+  `latest`) and the Helm chart via `helm/tasks/`, while `main` pushes publish `latest`
 - Grafana dashboards generated from code (`cmd/gen-device-dashboard`) and committed to `helm/dashboards/`
 - Alert YAML rules in `helm/alerts/`, tested with `promtool test rules tests/alerts/test_*.yaml`

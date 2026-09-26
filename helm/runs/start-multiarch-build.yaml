@@ -11,8 +11,16 @@ spec:
       value: timgluz/smcprober
     - name: revision
       value: main
+    # Repository without a tag; the pipeline resolves the version.
     - name: image
-      value: docker.io/tauho/smcprober:latest
+      value: docker.io/tauho/smcprober
+    # Set to a git tag (and matching VERSION) to publish an immutable release,
+    # e.g. release-tag: v0.0.3, revision: v0.0.3, additional-tag: latest.
+    - name: release-tag
+      value: ""
+    # For a release build set this to "latest" to also move the moving tag.
+    - name: additional-tag
+      value: ""
     - name: registry
       value: docker.io
     - name: registry-insecure

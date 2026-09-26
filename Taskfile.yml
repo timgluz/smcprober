@@ -30,9 +30,10 @@ vars:
   IMAGE_REPO: "{{.REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}/{{.IMAGE_NAME}}"
   OCI_REGISTRY: "oci://{{.OCI_REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}"
   SMC_NAMESPACE: smcprober
+  # Local builds/runs default to the moving "latest" tag. Releases use the
+  # version from the VERSION file (source of truth) via the release:* tasks and
+  # the Tekton pipeline, which tags images with that fixed version.
   VERSION: latest
-# version should come from centralized place as builds are done by Tekton workflows
-#   sh: "./scripts/generate-version.sh"
 
 tasks:
   default:
@@ -206,12 +207,45 @@ tasks:
       - build:docker
 
   "release:docker":
+    desc: Build and push the image tagged with the version in the VERSION file
     cmds:
       - task: "build:docker"
+        vars:
+          VERSION: "{{.VERSION}}"
       - |
         {{.DOCKER_BIN}} tag smcprober:{{.VERSION}} {{.IMAGE_REPO}}:{{.VERSION}}
       - |
         {{.DOCKER_BIN}} push {{if eq .REGISTRY_INSECURE "true"}}--insecure-registry {{end}}{{.IMAGE_REPO}}:{{.VERSION}}
+    vars:
+      VERSION:
+        sh: "cat VERSION"
+
+  "release:tag":
+    desc: Tag the current commit with the version in VERSION and push it, triggering the release pipeline
+    cmds:
+      - |
+        VERSION="$(cat VERSION)"
+        if [ -z "${VERSION}" ]; then
+          echo "VERSION file is empty" >&2
+          exit 1
+        fi
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "Working tree is dirty; commit or stash changes before tagging" >&2
+          exit 1
+        fi
+        if git rev-parse -q --verify "refs/tags/${VERSION}" >/dev/null; then
+          echo "Tag ${VERSION} already exists" >&2
+          exit 1
+        fi
+        git tag -a "${VERSION}" -m "Release ${VERSION}"
+        git push origin "${VERSION}"
+        echo "Pushed ${VERSION}; the release pipeline will publish the fixed version"
+
+  "release:version":
+    desc: Print the current version from the VERSION file
+    cmds:
+      - cat VERSION
+    silent: true
 
   release:
     desc: "Deprecated: replaced by pipeline"

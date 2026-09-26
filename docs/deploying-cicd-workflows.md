@@ -8,9 +8,41 @@ smcprober project.
 The CI/CD workflows use Tekton pipelines to:
 
 - Clone the repository from GitHub
+- Resolve the version from the `VERSION` file
 - Build Docker images for multiple architectures (amd64, arm64)
 - Push images to a container registry (public Docker Hub by default)
 - Create multi-architecture manifests
+- Publish the Helm chart for tagged releases
+
+## Versioning and Releases
+
+The `VERSION` file in the repository root is the **source of truth** for the
+current release (for example `v0.0.2`). The pipeline refuses to build a release
+whose git tag does not match `VERSION`, so the two can never drift.
+
+| Trigger | Image tags published |
+| --- | --- |
+| Push to `main` | `latest` |
+| Push tag `vX.Y.Z` | `vX.Y.Z` (immutable) and `latest` |
+
+To cut a release:
+
+1. Bump `VERSION` and add a matching entry to `CHANGELOG.md`.
+2. Merge to `main`.
+3. Tag and push — either `task release:tag`, or manually:
+
+   ```bash
+   git tag -a v0.0.3 -m "Release v0.0.3"
+   git push origin v0.0.3
+   ```
+
+The tag push triggers the pipeline, which publishes
+`<registry>/<namespace>/smcprober:v0.0.3` and the Helm chart at the same version.
+Deployments can then pin that fixed version:
+
+```bash
+helm upgrade --install smcprober ./helm -n smcprober --set image.tag=v0.0.3
+```
 
 ## Prerequisites
 
@@ -93,6 +125,9 @@ To deploy all available tasks:
 kubectl apply -f helm/tasks/ -n smc-cicd
 ```
 
+This includes `verify-dockerhub-creds`, `resolve-version`, `git-clone-and-build`,
+`create-docker-manifest`, and `package-helm`.
+
 ### Deploy the Build Pipeline
 
 ```bash
@@ -103,20 +138,23 @@ kubectl apply -f helm/pipelines/build-multiarch-image.yaml -n smc-cicd
 
 ### Option 1: Run Individual Clone-and-Build Task
 
-To run a single architecture build:
+To run a single architecture build, pass the repository without a tag plus the
+version to publish:
 
 ```bash
 tkn task start git-clone-and-build \
   --param repo=timgluz/smcprober \
   --param revision=main \
-  --param image=docker.io/tauho/smcprober:latest-dev-amd64 \
+  --param image=docker.io/tauho/smcprober \
+  --param version=v0.0.2-dev-amd64 \
   --param platform=linux/amd64 \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
   -n smc-cicd
 ```
 
-For a private registry served over plain HTTP, add
+`image` is the repository and `version` is the tag, so the pushed reference is
+`<image>:<version>`. For a private registry served over plain HTTP, add
 `--param registry-insecure=true`; leave it off for TLS registries.
 
 ### Option 2: Release Helm Chart
@@ -132,8 +170,8 @@ k apply -f helm/tasks/release-helm.yaml
 ```bash
 tkn task start package-helm \
   --param repo=timgluz/smcprober \
-  --param revision=main \
-  --param version=latest \
+  --param revision=v0.0.2 \
+  --param version=v0.0.2 \
   --param oci-registry=oci://registry-1.docker.io/tauho \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
@@ -149,6 +187,34 @@ To build for both amd64 and arm64 architectures:
 
 ```bash
 kubectl create -f helm/runs/start-multiarch-build.yaml -n smc-cicd
+```
+
+For a non-release build this publishes `latest`. To publish a fixed version,
+set `release-tag` to the git tag (it must match `VERSION`) and optionally
+`additional-tag` to also move `latest`:
+
+```yaml
+params:
+  - name: revision
+    value: v0.0.3
+  - name: release-tag
+    value: v0.0.3
+  - name: additional-tag
+    value: latest
+```
+
+Or from the CLI:
+
+```bash
+tkn pipeline start build-multiarch-image \
+  --namespace smc-cicd \
+  --param repo=timgluz/smcprober \
+  --param revision=v0.0.3 \
+  --param image=docker.io/tauho/smcprober \
+  --param release-tag=v0.0.3 \
+  --param additional-tag=latest \
+  --workspace name=dockerconfig,secret=docker-config \
+  --showlog
 ```
 
 Edit the `image`, `registry` and `registry-insecure` params in

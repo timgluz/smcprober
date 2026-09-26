@@ -9,8 +9,15 @@ spec:
     - name: revision
     # Registry settings are overridable per TriggerTemplate; defaults target
     # public Docker Hub so webhook builds work without extra configuration.
+    # `image` is a repository without a tag: the pipeline resolves the version.
     - name: image
-      default: docker.io/tauho/smcprober:latest
+      default: docker.io/tauho/smcprober
+    - name: release-tag
+      default: ""
+    - name: additional-tag
+      default: ""
+    - name: oci-registry
+      default: oci://registry-1.docker.io/tauho
     - name: registry
       default: docker.io
     - name: registry-insecure
@@ -31,6 +38,12 @@ spec:
             value: $(tt.params.revision)
           - name: image
             value: $(tt.params.image)
+          - name: release-tag
+            value: $(tt.params.release-tag)
+          - name: additional-tag
+            value: $(tt.params.additional-tag)
+          - name: oci-registry
+            value: $(tt.params.oci-registry)
           - name: registry
             value: $(tt.params.registry)
           - name: registry-insecure
