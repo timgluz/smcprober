@@ -4,7 +4,7 @@
 # Ignore rules that are too strict or not applicable
 ignored:
 # DL3006: Always tag the version of an image explicitly
-# We're using specific tags already (golang:1.25, distroless/static:nonroot)
+# We're using specific tags already (golang:1.27, distroless/static:nonroot)
 
 # DL3008: Pin versions in apt get install
 # Not applicable as we use distroless base image

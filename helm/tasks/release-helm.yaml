@@ -26,6 +26,12 @@ spec:
       type: string
       description: OCI registry URL to push the Helm chart.
       default: oci://registry-1.docker.io/tauho
+    - name: registry-insecure
+      type: string
+      description: >-
+        Set to "true" to push the chart over plain HTTP.
+        Only use this for registries served over plain HTTP.
+      default: "false"
   workspaces:
     - name: dockerconfig
       description: The workspace containing Docker configuration (e.g., for authentication).
@@ -74,10 +80,24 @@ spec:
         # Point Helm to the writable location
         mkdir -p /tmp/docker
         export DOCKER_CONFIG=/tmp/docker/config.json
-        echo "Logging in to OCI registry as $USERNAME"
-        helm registry login registry-1.docker.io -u "$USERNAME" --password "$PASSWORD"
-        echo "Pushing Helm chart to $(params.oci-registry)"
-        helm push smcprober-*.tgz $(params.oci-registry)
+
+        # Derive the registry host from the OCI URL, e.g.
+        # oci://registry-1.docker.io/tauho -> registry-1.docker.io
+        OCI_URL="$(params.oci-registry)"
+        REGISTRY_HOST="${OCI_URL#oci://}"
+        REGISTRY_HOST="${REGISTRY_HOST%%/*}"
+
+        # TLS verification is on by default; opt out only for plain-HTTP registries.
+        INSECURE_FLAG=""
+        if [ "$(params.registry-insecure)" = "true" ]; then
+          INSECURE_FLAG="--plain-http"
+        fi
+
+        echo "Logging in to OCI registry ${REGISTRY_HOST} as $USERNAME"
+        printf '%s' "$PASSWORD" | helm registry login "${REGISTRY_HOST}" \
+          ${INSECURE_FLAG} -u "$USERNAME" --password-stdin
+        echo "Pushing Helm chart to ${OCI_URL}"
+        helm push ${INSECURE_FLAG} smcprober-*.tgz "${OCI_URL}"
       env:
         - name: REGISTRY_CONFIG
           value: "/workspace/dockerconfig/.dockerconfigjson"

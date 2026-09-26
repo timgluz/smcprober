@@ -1,14 +1,25 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/redhat-developer/vscode-tekton/refs/heads/main/scheme/tekton.dev/v1_Task.json
-# Verifies Docker Hub credentials before expensive build steps
+# Verifies registry credentials before expensive build steps
 apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: verify-dockerhub-creds
   namespace: smc-cicd
 spec:
+  params:
+    - name: registry
+      type: string
+      description: Registry host to verify credentials against.
+      default: docker.io
+    - name: registry-insecure
+      type: string
+      description: >-
+        Set to "true" to skip TLS verification when logging in.
+        Only use this for registries served over plain HTTP.
+      default: "false"
   workspaces:
     - name: dockerconfig
-      description: Workspace containing .dockerconfigjson for Docker Hub authentication.
+      description: Workspace containing .dockerconfigjson for registry authentication.
   steps:
     - name: verify-login
       image: quay.io/buildah/stable:latest
@@ -16,8 +27,17 @@ spec:
       script: |
         #!/bin/bash
         set -e
-        echo "Verifying Docker Hub credentials..."
+        REGISTRY="$(params.registry)"
+
+        # TLS verification is on by default; opt out only for plain-HTTP registries.
+        INSECURE_FLAG=""
+        if [ "$(params.registry-insecure)" = "true" ]; then
+          INSECURE_FLAG="--tls-verify=false"
+        fi
+
+        echo "Verifying credentials for ${REGISTRY}..."
         buildah login \
+          ${INSECURE_FLAG} \
           --authfile /workspace/dockerconfig/.dockerconfigjson \
-          registry-1.docker.io
+          "${REGISTRY}"
         echo "Credentials verified."

@@ -13,7 +13,15 @@ spec:
       default: main
     - name: image
       type: string
-      default: tauho/smcprober:latest
+      default: docker.io/tauho/smcprober:latest
+    - name: registry
+      type: string
+      description: Registry host whose credentials are verified; must match the image registry.
+      default: docker.io
+    - name: registry-insecure
+      type: string
+      description: Set to "true" for plain-HTTP registries (disables TLS verification).
+      default: "false"
   workspaces:
     - name: dockerconfig
   tasks:
@@ -23,6 +31,11 @@ spec:
       workspaces:
         - name: dockerconfig
           workspace: dockerconfig
+      params:
+        - name: registry
+          value: $(params.registry)
+        - name: registry-insecure
+          value: $(params.registry-insecure)
     - name: build-amd64
       retries: 3
       runAfter:
@@ -41,6 +54,8 @@ spec:
           value: $(params.image)
         - name: platform
           value: linux/amd64
+        - name: registry-insecure
+          value: $(params.registry-insecure)
     - name: build-arm64
       retries: 3
       runAfter:
@@ -59,6 +74,8 @@ spec:
           value: $(params.image)
         - name: platform
           value: linux/arm64
+        - name: registry-insecure
+          value: $(params.registry-insecure)
     - name: create-manifest
       runAfter:
         - build-amd64
@@ -75,3 +92,5 @@ spec:
           value:
             - $(params.image)-amd64
             - $(params.image)-arm64
+        - name: registry-insecure
+          value: $(params.registry-insecure)

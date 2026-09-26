@@ -11,6 +11,12 @@ spec:
     - name: images
       type: array
       description: "List of arch-specific images"
+    - name: registry-insecure
+      type: string
+      description: >-
+        Set to "true" to skip TLS verification when pushing to the registry.
+        Only use this for registries served over plain HTTP.
+      default: "false"
   workspaces:
     - name: dockerconfig
   steps:
@@ -24,17 +30,27 @@ spec:
         set -e
         IMAGE="$(params.image)"
 
+        # TLS verification is on by default; opt out only for plain-HTTP registries.
+        INSECURE_FLAG=""
+        if [ "$(params.registry-insecure)" = "true" ]; then
+          INSECURE_FLAG="--tls-verify=false"
+        fi
+
         echo "Creating manifest ${IMAGE}"
         buildah manifest create "${IMAGE}"
 
         # Add each arch-specific image to manifest
         for img in "$@" ; do
           echo "Adding ${img} to manifest"
-          buildah manifest add "${IMAGE}" docker://${img}
+          buildah manifest add \
+            ${INSECURE_FLAG} \
+            --authfile /workspace/dockerconfig/.dockerconfigjson \
+            "${IMAGE}" docker://${img}
         done
 
         echo "Pushing manifest $(params.image)"
         buildah manifest push \
+          ${INSECURE_FLAG} \
           --authfile /workspace/dockerconfig/.dockerconfigjson \
           --all \
           ${IMAGE} \
