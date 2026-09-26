@@ -30,6 +30,10 @@ vars:
   IMAGE_REPO: "{{.REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}/{{.IMAGE_NAME}}"
   OCI_REGISTRY: "oci://{{.OCI_REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}"
   SMC_NAMESPACE: smcprober
+  # Published artifact version: the VERSION file without the leading "v", because
+  # Helm requires a SemVerV2 chart version and image tags follow the same value.
+  APP_VERSION:
+    sh: sed 's/^v//' VERSION
   # Local builds/runs default to the moving "latest" tag. Releases use the
   # version from the VERSION file (source of truth) via the release:* tasks and
   # the Tekton pipeline, which tags images with that fixed version.
@@ -59,14 +63,13 @@ tasks:
   "release:helm":
     cmds:
       - task: generate:dashboards
-      - helm package helm --app-version "{{.VERSION}}"
+      # --version and --app-version both come from VERSION, so each release
+      # publishes a unique chart version instead of overwriting the previous one.
+      - helm package helm --version "{{.APP_VERSION}}" --app-version "{{.APP_VERSION}}"
       # --plain-http is only valid for registries served over plain HTTP; it is
       # opt-in via REGISTRY_INSECURE so TLS stays verified by default.
       - helm push {{if eq .REGISTRY_INSECURE "true"}}--plain-http {{end}}smcprober-*.tgz {{.OCI_REGISTRY}}
       - rm smcprober-*.tgz
-    vars:
-      VERSION:
-        sh: "cat VERSION"
 
   "run:exporter":
     cmds:
@@ -211,14 +214,11 @@ tasks:
     cmds:
       - task: "build:docker"
         vars:
-          VERSION: "{{.VERSION}}"
+          VERSION: "{{.APP_VERSION}}"
       - |
-        {{.DOCKER_BIN}} tag smcprober:{{.VERSION}} {{.IMAGE_REPO}}:{{.VERSION}}
+        {{.DOCKER_BIN}} tag smcprober:{{.APP_VERSION}} {{.IMAGE_REPO}}:{{.APP_VERSION}}
       - |
-        {{.DOCKER_BIN}} push {{if eq .REGISTRY_INSECURE "true"}}--insecure-registry {{end}}{{.IMAGE_REPO}}:{{.VERSION}}
-    vars:
-      VERSION:
-        sh: "cat VERSION"
+        {{.DOCKER_BIN}} push {{if eq .REGISTRY_INSECURE "true"}}--insecure-registry {{end}}{{.IMAGE_REPO}}:{{.APP_VERSION}}
 
   "release:tag":
     desc: Tag the current commit with the version in VERSION and push it, triggering the release pipeline
@@ -237,14 +237,21 @@ tasks:
           echo "Tag ${VERSION} already exists" >&2
           exit 1
         fi
+        CHART_VERSION="$(sed -n 's/^version:[[:space:]]*//p' helm/Chart.yaml | head -n1 | tr -d '[:space:]"')"
+        if [ "${CHART_VERSION}" != "{{.APP_VERSION}}" ]; then
+          echo "helm/Chart.yaml version (${CHART_VERSION}) does not match {{.APP_VERSION}}" >&2
+          echo "Set helm/Chart.yaml version and appVersion to {{.APP_VERSION}} before tagging." >&2
+          exit 1
+        fi
         git tag -a "${VERSION}" -m "Release ${VERSION}"
         git push origin "${VERSION}"
         echo "Pushed ${VERSION}; the release pipeline will publish the fixed version"
 
   "release:version":
-    desc: Print the current version from the VERSION file
+    desc: Print the release version (VERSION/git tag) and the published artifact version
     cmds:
-      - cat VERSION
+      - 'echo "VERSION/tag: $(cat VERSION)"'
+      - 'echo "artifact:    {{.APP_VERSION}}"'
     silent: true
 
   release:

@@ -450,16 +450,20 @@ verify-creds ── resolve-version
 
 ### Versioning
 
-`VERSION` (for example `v0.0.2`) is the source of truth for the current release
-and is also the image tag. The pipeline fails if a release tag does not match it,
+`VERSION` (for example `v0.0.2`) is the source of truth for the current release.
+Git tags and the file keep the `v` prefix; **published artifacts drop it** and use
+bare SemVer (`0.0.2`), because Helm rejects a `v` prefix in a chart version. That
+bare version is the image tag, the chart `version` and the chart `appVersion`, and
+the pipeline fails if the release tag or `helm/Chart.yaml` do not match `VERSION`,
 so a version can never be published under the wrong tag.
 
 | Event | Published image tags |
 | --- | --- |
 | Push to `main` | `latest` |
-| Push tag `vX.Y.Z` | `vX.Y.Z` (immutable) and `latest` |
+| Push tag `vX.Y.Z` | `X.Y.Z` (immutable) and `latest` |
 
-Tagged releases also publish the Helm chart at the same version.
+Tagged releases also publish the Helm chart as `smcprober-X.Y.Z`, so each release
+gets a unique chart version instead of overwriting the previous one.
 
 ### Prerequisites
 
@@ -518,7 +522,8 @@ over plain HTTP.
 
 ### Release a fixed version
 
-Bump `VERSION` and `CHANGELOG.md`, merge to `main`, then tag:
+Bump `VERSION` (for example to `v0.0.3`), set `0.0.3` as `version` and `appVersion`
+in `helm/Chart.yaml`, add a `CHANGELOG.md` entry, merge to `main`, then tag:
 
 ```bash
 task release:tag          # tags with the VERSION file value and pushes it
@@ -531,13 +536,14 @@ git tag -a v0.0.3 -m "Release v0.0.3"
 git push origin v0.0.3
 ```
 
-The tag push publishes `docker.io/tauho/smcprober:v0.0.3`, moves `latest`, and
-publishes the Helm chart at `v0.0.3`. Deployments can then pin the fixed version:
+The tag push publishes `docker.io/tauho/smcprober:0.0.3`, moves `latest`, and
+publishes the Helm chart as `smcprober-0.0.3`. Deployments can then pin the fixed
+version (`task release:version` prints both forms):
 
 ```bash
 helm upgrade --install smcprober ./helm -n smcprober \
   --set image.repository=docker.io/tauho/smcprober \
-  --set image.tag=v0.0.3
+  --set image.tag=0.0.3
 ```
 
 To publish a release manually instead of via a tag push, pass the tag in

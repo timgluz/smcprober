@@ -12,13 +12,13 @@ description: A Helm chart for deploying smcprober application
 # pipeline. Library charts do not define any templates and therefore cannot be deployed.
 type: application
 
-# This is the chart version. This version number should be incremented each time you make changes
-# to the chart and its templates, including the app version.
-# Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.0
+# This is the chart version. It tracks the VERSION file in the repository root,
+# minus the leading "v" (Helm requires a SemVerV2 version, e.g. "0.0.2"). The
+# release pipeline re-applies it with `helm package --version` so a release can
+# never overwrite a previously published chart version.
+version: 0.0.2
 
 # This is the version number of the application being deployed. It tracks the
-# VERSION file in the repository root, which is also the image tag published by
-# the Tekton release pipeline (for example "v0.0.2").
+# published image tag from the Tekton release pipeline (for example "0.0.2").
 # It is recommended to use it with quotes.
-appVersion: "v0.0.2"
+appVersion: "0.0.2"

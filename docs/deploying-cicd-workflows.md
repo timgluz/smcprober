@@ -17,19 +17,24 @@ The CI/CD workflows use Tekton pipelines to:
 ## Versioning and Releases
 
 The `VERSION` file in the repository root is the **source of truth** for the
-current release (for example `v0.0.2`). The pipeline refuses to build a release
-whose git tag does not match `VERSION`, so the two can never drift.
+current release (for example `v0.0.2`). Git tags and the file keep the `v` prefix,
+but published artifacts use **bare SemVer** (`0.0.2`) because Helm rejects a `v`
+prefix in a chart version. The pipeline refuses to build a release whose git tag
+does not match `VERSION`, or whose `helm/Chart.yaml` `version` does not match the
+bare version, so the image tag and chart version can never drift.
 
 | Trigger | Image tags published |
 | --- | --- |
 | Push to `main` | `latest` |
-| Push tag `vX.Y.Z` | `vX.Y.Z` (immutable) and `latest` |
+| Push tag `vX.Y.Z` | `X.Y.Z` (immutable) and `latest` |
 
 To cut a release:
 
-1. Bump `VERSION` and add a matching entry to `CHANGELOG.md`.
-2. Merge to `main`.
-3. Tag and push — either `task release:tag`, or manually:
+1. Bump `VERSION` (for example to `v0.0.3`), and set `0.0.3` as both `version`
+   and `appVersion` in `helm/Chart.yaml`.
+2. Add a matching entry to `CHANGELOG.md`.
+3. Merge to `main`.
+4. Tag and push — either `task release:tag`, or manually:
 
    ```bash
    git tag -a v0.0.3 -m "Release v0.0.3"
@@ -37,11 +42,12 @@ To cut a release:
    ```
 
 The tag push triggers the pipeline, which publishes
-`<registry>/<namespace>/smcprober:v0.0.3` and the Helm chart at the same version.
-Deployments can then pin that fixed version:
+`<registry>/<namespace>/smcprober:0.0.3` and the Helm chart as
+`smcprober-0.0.3` (a unique chart version per release, rather than overwriting
+the previous one). Deployments can then pin that fixed version:
 
 ```bash
-helm upgrade --install smcprober ./helm -n smcprober --set image.tag=v0.0.3
+helm upgrade --install smcprober ./helm -n smcprober --set image.tag=0.0.3
 ```
 
 ## Prerequisites
@@ -139,14 +145,14 @@ kubectl apply -f helm/pipelines/build-multiarch-image.yaml -n smc-cicd
 ### Option 1: Run Individual Clone-and-Build Task
 
 To run a single architecture build, pass the repository without a tag plus the
-version to publish:
+version to publish (bare SemVer — see above):
 
 ```bash
 tkn task start git-clone-and-build \
   --param repo=timgluz/smcprober \
   --param revision=main \
   --param image=docker.io/tauho/smcprober \
-  --param version=v0.0.2-dev-amd64 \
+  --param version=0.0.2-dev-amd64 \
   --param platform=linux/amd64 \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
@@ -171,7 +177,7 @@ k apply -f helm/tasks/release-helm.yaml
 tkn task start package-helm \
   --param repo=timgluz/smcprober \
   --param revision=v0.0.2 \
-  --param version=v0.0.2 \
+  --param version=0.0.2 \
   --param oci-registry=oci://registry-1.docker.io/tauho \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
@@ -216,6 +222,9 @@ tkn pipeline start build-multiarch-image \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog
 ```
+
+`revision` and `release-tag` use the git tag (`v0.0.3`); the published image tag
+drops the `v` and becomes `0.0.3`.
 
 Edit the `image`, `registry` and `registry-insecure` params in
 `helm/runs/start-multiarch-build.yaml` to target a different registry.
