@@ -73,6 +73,29 @@
       ],
     },
     {
+      // Renovate does not bump the `go` directive in go.mod by default, so the
+      // minimum Go version silently drifts behind the Dockerfile builder image.
+      // See https://docs.renovatebot.com/modules/manager/gomod/#updating-of-go-mod-and-toolchain-directives
+      description: 'Bump the go directive in go.mod to the latest Go release',
+      matchManagers: [
+        'gomod',
+      ],
+      matchDepNames: [
+        'go',
+      ],
+      matchDepTypes: [
+        'golang',
+      ],
+      rangeStrategy: 'bump',
+      groupName: 'Go version',
+      semanticCommitType: 'chore',
+      semanticCommitScope: 'build',
+      prBodyNotes: [
+        'This PR bumps the minimum Go version in go.mod.',
+        'Keep the Dockerfile builder image and the pinned golangci-lint in sync before merging.',
+      ],
+    },
+    {
       matchManagers: [
         'dockerfile',
       ],
@@ -112,5 +135,9 @@
       ],
     },
   ],
-  prTitle: '{{{semanticPrefix}}}update {{depName}} to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}v{{{newMajor}}}{{else}}{{#if isSingleVersion}}v{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}{{/if}}{{/if}}',
+  // PR titles are derived from the commit message subject. Semantic commits
+  // are enabled, so the `chore(scope):` prefix comes from semanticPrefix and
+  // the topic defaults to `{{depName}}`.
+  commitMessageAction: 'update',
+  commitMessageExtra: 'to {{#if isPinDigest}}{{{newDigestShort}}}{{else}}{{#if isMajor}}v{{{newMajor}}}{{else}}{{#if isSingleVersion}}v{{{newVersion}}}{{else}}{{{newValue}}}{{/if}}{{/if}}{{/if}}',
 }
