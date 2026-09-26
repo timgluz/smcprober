@@ -7,6 +7,14 @@ spec:
   params:
     - name: repo
     - name: revision
+    # Registry settings are overridable per TriggerTemplate; defaults target
+    # public Docker Hub so webhook builds work without extra configuration.
+    - name: image
+      default: docker.io/tauho/smcprober:latest
+    - name: registry
+      default: docker.io
+    - name: registry-insecure
+      default: "false"
   resourcetemplates:
     - apiVersion: tekton.dev/v1
       kind: PipelineRun
@@ -22,7 +30,11 @@ spec:
           - name: revision
             value: $(tt.params.revision)
           - name: image
-            value: tauho/smcprober:latest
+            value: $(tt.params.image)
+          - name: registry
+            value: $(tt.params.registry)
+          - name: registry-insecure
+            value: $(tt.params.registry-insecure)
         workspaces:
           - name: dockerconfig
             secret:

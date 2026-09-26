@@ -110,6 +110,171 @@ kubectl get all -n smcprober-smoke
 helm uninstall smcprober-smoke
 ```
 
+### Container Registry Configuration
+
+The build, release and deploy tasks use **public Docker Hub by default**, so no
+extra configuration is needed to get started. To use a private/internal
+registry instead, set these variables in `.env` (or the environment):
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `REGISTRY_HOST` | `docker.io` | Image registry host used to tag/push images |
+| `OCI_REGISTRY_HOST` | `registry-1.docker.io` | Helm OCI host (differs from `docker.io` on Docker Hub) |
+| `REGISTRY_NAMESPACE` | `tauho` | Docker Hub user/org, or registry project |
+| `IMAGE_NAME` | `smcprober` | Image name |
+| `REGISTRY_INSECURE` | `false` | Set `true` only for registries served over plain HTTP |
+| `IMAGE_PULL_SECRET` | *(empty)* | `imagePullSecret` name passed to the Helm chart |
+
+Credentials always come from `DOCKER_USERNAME` / `DOCKER_PASSWORD`.
+
+For example, an internal Harbor served over plain HTTP:
+
+```bash
+REGISTRY_HOST="harbor.example.com"
+OCI_REGISTRY_HOST="harbor.example.com"
+REGISTRY_NAMESPACE="smcprober"
+IMAGE_NAME="smcprober"
+REGISTRY_INSECURE="true"
+IMAGE_PULL_SECRET="smcprober-registry"
+```
+
+Then create the pull secret and deploy:
+
+```bash
+task deploy:credentials   # creates $IMAGE_PULL_SECRET in the target namespace
+task release:docker       # tag + push the image
+task release:helm         # package + push the chart
+task deploy:helm          # deploy with the configured image repository
+```
+
+> **Note:** `REGISTRY_INSECURE=true` disables TLS verification (`--tls-verify=false`,
+> `--plain-http`, `--insecure-registry`). Leave it `false` for any registry that
+> serves TLS. For Kubernetes to pull from a plain-HTTP registry, the nodes must
+> also list it as an insecure registry.
+
+### Deploying the Helm Chart with a Custom Registry
+
+The **chart** and the **container image** live in independent registries — you can
+pull the chart from one and the image from another. Both are plain Helm values,
+so no chart changes are required. The examples below use an internal Harbor at
+`harbor.example.com`; substitute your own host and project.
+
+#### Pull the chart from a custom OCI registry
+
+```bash
+# Add --plain-http if the registry is served over plain HTTP
+helm registry login harbor.example.com -u "$DOCKER_USERNAME"
+
+helm install smcprober oci://harbor.example.com/smcprober/smcprober \
+  --namespace smcprober \
+  --create-namespace \
+  --set namespace=smcprober \
+  --set-file=configJSON=config-k8s.json \
+  --set-file=configExporterJSON=config-exporter-k8s.json \
+  --set-file=secret.env=env
+```
+
+You can also install from a local checkout or a packaged chart, which is useful
+when the chart itself is not published anywhere:
+
+```bash
+helm install smcprober ./helm \
+  --namespace smcprober \
+  --create-namespace \
+  --set namespace=smcprober \
+  --set-file=configJSON=config-k8s.json \
+  --set-file=configExporterJSON=config-exporter-k8s.json \
+  --set-file=secret.env=env
+```
+
+#### Create the image pull secret
+
+Private registries require an `imagePullSecret` in the same namespace as the
+release. Create the namespace first, then the secret:
+
+```bash
+kubectl create namespace smcprober --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret docker-registry smcprober-registry \
+  --namespace smcprober \
+  --docker-server=harbor.example.com \
+  --docker-username="$DOCKER_USERNAME" \
+  --docker-password="$DOCKER_PASSWORD"
+```
+
+#### Point the chart at the custom image
+
+Keep the settings in a values file so installs and upgrades stay consistent:
+
+```yaml
+# values-private-registry.yaml
+namespace: smcprober
+image:
+  repository: harbor.example.com/smcprober/smcprober
+  tag: "latest"
+imagePullSecrets:
+  - name: smcprober-registry
+```
+
+```bash
+helm install smcprober oci://harbor.example.com/smcprober/smcprober \
+  --namespace smcprober \
+  --create-namespace \
+  -f values-private-registry.yaml \
+  --set-file=configJSON=config-k8s.json \
+  --set-file=configExporterJSON=config-exporter-k8s.json \
+  --set-file=secret.env=env
+```
+
+The same settings can be passed inline:
+
+```bash
+helm install smcprober ./helm \
+  --namespace smcprober \
+  --create-namespace \
+  --set namespace=smcprober \
+  --set image.repository=harbor.example.com/smcprober/smcprober \
+  --set image.tag=latest \
+  --set "imagePullSecrets[0].name=smcprober-registry" \
+  --set-file=configJSON=config-k8s.json \
+  --set-file=configExporterJSON=config-exporter-k8s.json \
+  --set-file=secret.env=env
+```
+
+This also covers a **private Docker Hub** repository: set
+`image.repository=tauho/smcprober` (or `docker.io/tauho/smcprober`) and create the
+secret with `--docker-server=docker.io`.
+
+#### Upgrade an existing release
+
+```bash
+helm upgrade smcprober oci://harbor.example.com/smcprober/smcprober \
+  --namespace smcprober \
+  -f values-private-registry.yaml \
+  --set image.tag=<new-tag>
+```
+
+#### Verify the deployment
+
+```bash
+kubectl get pods -n smcprober
+kubectl get deployment -n smcprober \
+  -o jsonpath='{.items[*].spec.template.spec.containers[*].image}{"\n"}'
+```
+
+#### Simplifying with Taskfile variables
+
+If you set the registry variables from [Container Registry Configuration](#container-registry-configuration)
+in `.env`, the equivalent one-liners become:
+
+```bash
+task deploy:credentials   # create $IMAGE_PULL_SECRET in $SMC_NAMESPACE
+task deploy:helm          # deploy with $IMAGE_REPO and $IMAGE_PULL_SECRET applied
+```
+
+`deploy:helm` automatically passes `image.repository=$IMAGE_REPO` and, when set,
+`imagePullSecrets[0].name=$IMAGE_PULL_SECRET`.
+
 ### Installation for Development
 
 1. Clone the repository:
@@ -284,8 +449,10 @@ verify-creds
 
 - [Tekton Pipelines](https://tekton.dev/docs/installation/pipelines/) installed in your cluster
 - [tkn CLI](https://tekton.dev/docs/cli/) installed locally
-- The `verify-dockerhub-creds`, `git-clone-and-build`, and `create-docker-manifest` Tasks deployed to the `smc-cicd` namespace
-- A Kubernetes Secret named `docker-config` containing Docker Hub credentials in the `smc-cicd` namespace
+- The `verify-dockerhub-creds`, `git-clone-and-build`, and `create-docker-manifest` Tasks
+  deployed to the `smc-cicd` namespace
+- A Kubernetes Secret named `docker-config` containing registry credentials in the
+  `smc-cicd` namespace (Docker Hub by default)
 
 ### Deploy the pipeline
 
@@ -297,7 +464,8 @@ kubectl apply -f helm/tasks/create-docker-manifest.yaml
 kubectl apply -f helm/pipelines/build-multiarch-image.yaml
 ```
 
-Create the Docker Hub credentials secret (requires `DOCKER_USERNAME` and `DOCKER_PASSWORD` in `.env`):
+Create the registry credentials secret (requires `DOCKER_USERNAME` and `DOCKER_PASSWORD` in `.env`;
+`--docker-server` defaults to `REGISTRY_HOST`):
 
 ```bash
 task deploy:ci:credentials
@@ -316,12 +484,16 @@ tkn pipeline start build-multiarch-image \
   --namespace smc-cicd \
   --param repo=timgluz/smcprober \
   --param revision=main \
-  --param image=tauho/smcprober:latest \
+  --param image=docker.io/tauho/smcprober:latest \
+  --param registry=docker.io \
   --workspace name=dockerconfig,secret=<docker-credentials-secret> \
   --showlog
 ```
 
-Replace `<docker-credentials-secret>` with the name of your Secret.
+Replace `<docker-credentials-secret>` with the name of your Secret. When pushing
+to a custom registry, set `--param image` and `--param registry` to that
+registry's host, and add `--param registry-insecure=true` only if it is served
+over plain HTTP.
 
 ### Monitor runs
 

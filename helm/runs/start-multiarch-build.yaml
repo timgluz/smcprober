@@ -12,7 +12,11 @@ spec:
     - name: revision
       value: main
     - name: image
-      value: tauho/smcprober:latest
+      value: docker.io/tauho/smcprober:latest
+    - name: registry
+      value: docker.io
+    - name: registry-insecure
+      value: "false"
   workspaces:
     - name: dockerconfig
       secret:

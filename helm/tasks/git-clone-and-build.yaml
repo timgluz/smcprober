@@ -20,6 +20,12 @@ spec:
     - name: platform
       type: string
       description: The target platform for the Docker image (e.g., linux/amd64, linux/arm64).
+    - name: registry-insecure
+      type: string
+      description: >-
+        Set to "true" to skip TLS verification when pushing to the registry.
+        Only use this for registries served over plain HTTP.
+      default: "false"
   workspaces:
     - name: dockerconfig
       description: The workspace containing Docker configuration (e.g., for authentication).
@@ -47,6 +53,12 @@ spec:
         ARCH=$(echo $(params.platform) | cut -d'/' -f2)
         IMAGE_WITH_ARCH=$(params.image)-${ARCH}
 
+        # TLS verification is on by default; opt out only for plain-HTTP registries.
+        INSECURE_FLAG=""
+        if [ "$(params.registry-insecure)" = "true" ]; then
+          INSECURE_FLAG="--tls-verify=false"
+        fi
+
         echo "Building for $(params.platform)"
         buildah build \
           --platform $(params.platform) \
@@ -56,6 +68,7 @@ spec:
 
         echo "Pushing ${IMAGE_WITH_ARCH}"
         buildah push \
+          ${INSECURE_FLAG} \
           --authfile /workspace/dockerconfig/.dockerconfigjson \
           ${IMAGE_WITH_ARCH}
       securityContext:

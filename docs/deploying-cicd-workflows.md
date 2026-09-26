@@ -9,7 +9,7 @@ The CI/CD workflows use Tekton pipelines to:
 
 - Clone the repository from GitHub
 - Build Docker images for multiple architectures (amd64, arm64)
-- Push images to Docker Hub
+- Push images to a container registry (public Docker Hub by default)
 - Create multi-architecture manifests
 
 ## Prerequisites
@@ -20,7 +20,7 @@ Before starting, ensure you have:
 - `tkn` (Tekton CLI) installed
 - Access to create resources in the cluster
 - A GitHub personal access token with appropriate permissions
-- A Docker Hub account and credentials
+- A container registry account and credentials (Docker Hub by default)
 
 ## Initial Setup
 
@@ -57,19 +57,23 @@ kubectl create secret generic github-token \
   -n smc-cicd
 ```
 
-### 4. Create Docker Registry Secret
+### 4. Create Container Registry Secret
 
-This secret is required for pushing images to Docker Hub:
+This secret is required for pushing images. The example below targets Docker Hub;
+for a private/internal registry use its host for `--docker-server`:
 
 ```bash
-export DOCKER_PASSWORD=<your_docker_hub_password>
+export DOCKER_PASSWORD=<your_registry_password>
 
 kubectl create secret docker-registry docker-config \
-  --docker-username=<your_docker_hub_username> \
+  --docker-username=<your_registry_username> \
   --docker-password=$DOCKER_PASSWORD \
   --docker-server=docker.io \
   -n smc-cicd
 ```
+
+Alternatively, set `REGISTRY_HOST` (plus `DOCKER_USERNAME` / `DOCKER_PASSWORD`) in
+`.env` and run `task deploy:ci:credentials`.
 
 ## Deploying Tasks and Pipelines
 
@@ -105,12 +109,15 @@ To run a single architecture build:
 tkn task start git-clone-and-build \
   --param repo=timgluz/smcprober \
   --param revision=main \
-  --param image=tauho/smcprober:latest-dev-amd64 \
+  --param image=docker.io/tauho/smcprober:latest-dev-amd64 \
   --param platform=linux/amd64 \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
   -n smc-cicd
 ```
+
+For a private registry served over plain HTTP, add
+`--param registry-insecure=true`; leave it off for TLS registries.
 
 ### Option 2: Release Helm Chart
 
@@ -127,10 +134,14 @@ tkn task start package-helm \
   --param repo=timgluz/smcprober \
   --param revision=main \
   --param version=latest \
+  --param oci-registry=oci://registry-1.docker.io/tauho \
   --workspace name=dockerconfig,secret=docker-config \
   --showlog \
   -n smc-cicd
 ```
+
+Set `--param oci-registry` to your own `oci://<host>/<namespace>` and add
+`--param registry-insecure=true` only for a plain-HTTP registry.
 
 ### Option 3: Run Multi-Architecture Build Pipeline
 
@@ -139,6 +150,9 @@ To build for both amd64 and arm64 architectures:
 ```bash
 kubectl create -f helm/runs/start-multiarch-build.yaml -n smc-cicd
 ```
+
+Edit the `image`, `registry` and `registry-insecure` params in
+`helm/runs/start-multiarch-build.yaml` to target a different registry.
 
 ## Monitoring Pipeline Runs
 

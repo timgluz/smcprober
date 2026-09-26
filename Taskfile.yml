@@ -7,7 +7,28 @@ dotenv: [".env"]
 vars:
   GREETING: Hello, World!
   DOCKER_BIN: nerdctl
-  DOCKER_HOST: docker.io
+  # Registry configuration. Defaults target public Docker Hub; override any of
+  # these in .env or the environment to use a private/internal registry.
+  #   REGISTRY_HOST      image registry host (Docker Hub: docker.io)
+  #   OCI_REGISTRY_HOST  Helm OCI host (Docker Hub uses registry-1.docker.io)
+  #   REGISTRY_NAMESPACE Docker Hub user/org, or registry project (e.g. smcprober)
+  #   IMAGE_NAME         image name (default: smcprober)
+  #   REGISTRY_INSECURE  "true" for plain-HTTP registries (disables TLS verify)
+  #   IMAGE_PULL_SECRET  imagePullSecret name for the chart (empty = none)
+  REGISTRY_HOST:
+    sh: echo "${REGISTRY_HOST:-docker.io}"
+  OCI_REGISTRY_HOST:
+    sh: echo "${OCI_REGISTRY_HOST:-registry-1.docker.io}"
+  REGISTRY_NAMESPACE:
+    sh: echo "${REGISTRY_NAMESPACE:-tauho}"
+  IMAGE_NAME:
+    sh: echo "${IMAGE_NAME:-smcprober}"
+  REGISTRY_INSECURE:
+    sh: echo "${REGISTRY_INSECURE:-false}"
+  IMAGE_PULL_SECRET:
+    sh: echo "${IMAGE_PULL_SECRET:-}"
+  IMAGE_REPO: "{{.REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}/{{.IMAGE_NAME}}"
+  OCI_REGISTRY: "oci://{{.OCI_REGISTRY_HOST}}/{{.REGISTRY_NAMESPACE}}"
   SMC_NAMESPACE: smcprober
   VERSION: latest
 # version should come from centralized place as builds are done by Tekton workflows
@@ -38,7 +59,9 @@ tasks:
     cmds:
       - task: generate:dashboards
       - helm package helm --app-version "{{.VERSION}}"
-      - helm push smcprober-*.tgz oci://registry-1.docker.io/tauho
+      # --plain-http is only valid for registries served over plain HTTP; it is
+      # opt-in via REGISTRY_INSECURE so TLS stays verified by default.
+      - helm push {{if eq .REGISTRY_INSECURE "true"}}--plain-http {{end}}smcprober-*.tgz {{.OCI_REGISTRY}}
       - rm smcprober-*.tgz
     vars:
       VERSION:
@@ -127,7 +150,9 @@ tasks:
         helm template dev ./helm --debug \
           --namespace {{.SMC_NAMESPACE}} \
           --set "image.tag"="{{.VERSION}}" \
-          --set-file=configJSON=configs/config-k8s.json \
+          --set "image.repository"="{{.IMAGE_REPO}}" \
+          {{if .IMAGE_PULL_SECRET}}--set "imagePullSecrets[0].name"="{{.IMAGE_PULL_SECRET}}" \
+          {{end}}--set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
           --set serviceMonitor.enabled=true \
@@ -148,7 +173,9 @@ tasks:
           --create-namespace \
           --rollback-on-failure \
           --set "image.tag"="{{.VERSION}}" \
-          --set-file=configJSON=configs/config-k8s.json \
+          --set "image.repository"="{{.IMAGE_REPO}}" \
+          {{if .IMAGE_PULL_SECRET}}--set "imagePullSecrets[0].name"="{{.IMAGE_PULL_SECRET}}" \
+          {{end}}--set-file=configJSON=configs/config-k8s.json \
           --set-file=configExporterJSON=configs/config-exporter-k8s.json \
           --set-file=secret.env=.env \
           --set serviceMonitor.enabled=true \
@@ -181,8 +208,10 @@ tasks:
   "release:docker":
     cmds:
       - task: "build:docker"
-      - "{{.DOCKER_BIN}} tag smcprober:{{.VERSION}} {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
-      - "{{.DOCKER_BIN}} push {{.DOCKER_HOST}}/tauho/smcprober:{{.VERSION}}"
+      - |
+        {{.DOCKER_BIN}} tag smcprober:{{.VERSION}} {{.IMAGE_REPO}}:{{.VERSION}}
+      - |
+        {{.DOCKER_BIN}} push {{if eq .REGISTRY_INSECURE "true"}}--insecure-registry {{end}}{{.IMAGE_REPO}}:{{.VERSION}}
 
   release:
     desc: "Deprecated: replaced by pipeline"
@@ -198,12 +227,14 @@ tasks:
     cmds:
       - echo "Creating Docker registry secret in namespace {{.SMC_NAMESPACE}}"
       - |
-        kubectl create secret docker-registry smcprober-registry -n {{.SMC_NAMESPACE}} \
+        kubectl create secret docker-registry \
+          {{.IMAGE_PULL_SECRET | default "smcprober-registry"}} \
+          -n {{.SMC_NAMESPACE}} \
           --docker-username={{.DOCKER_USERNAME}} \
           --docker-password={{.DOCKER_PASSWORD}} \
-          --docker-server={{.DOCKER_HOST}}
+          --docker-server={{.REGISTRY_HOST}}
     requires:
-      vars: [DOCKER_USERNAME, DOCKER_PASSWORD, DOCKER_HOST]
+      vars: [DOCKER_USERNAME, DOCKER_PASSWORD]
   "deploy:ci:credentials":
     desc: Create/update docker-config secret in smc-cicd namespace for Tekton pipeline
     cmds:
@@ -212,7 +243,7 @@ tasks:
         kubectl create secret docker-registry docker-config -n smc-cicd \
           --docker-username={{.DOCKER_USERNAME}} \
           --docker-password={{.DOCKER_PASSWORD}} \
-          --docker-server=registry-1.docker.io \
+          --docker-server={{.REGISTRY_HOST}} \
           --dry-run=client -o yaml | kubectl apply -f -
     requires:
       vars: [DOCKER_USERNAME, DOCKER_PASSWORD]
