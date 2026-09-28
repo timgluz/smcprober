@@ -1,0 +1,16 @@
+apiVersion: triggers.tekton.dev/v1beta1
+kind: TriggerBinding
+metadata:
+  name: github-tag-binding
+  namespace: smc-cicd
+spec:
+  params:
+    - name: repo
+      value: $(body.repository.full_name)
+    - name: revision
+      value: $(extensions.tag_name)
+    # A tag push is a release: build the immutable version and move "latest".
+    - name: release-tag
+      value: $(extensions.tag_name)
+    - name: additional-tag
+      value: latest

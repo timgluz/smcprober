@@ -333,8 +333,10 @@ Available Task commands:
 - `task test:alerts` - Run Prometheus alert rule tests
 - `task generate:dashboards` - Regenerate Grafana dashboard JSON
 - `task template:helm` - Template and validate Helm chart
-- `task release:docker` - Release Docker image to registry
+- `task release:docker` - Build and push the image tagged with the VERSION file value
 - `task release:helm` - Package and push Helm chart
+- `task release:tag` - Tag and push the VERSION file value to trigger a release
+- `task release:version` - Print the current version
 - `task release` - Release both Docker and Helm
 - `task deploy:credentials` - Deploy credentials to Kubernetes
 - `task deploy:ci:credentials` - Deploy Docker credentials for CI pipeline (smc-cicd namespace)
@@ -432,25 +434,43 @@ The application exposes Prometheus metrics at `/metrics` endpoint on port 8080.
 ## CI/CD
 
 Multi-arch Docker images are built via a Tekton pipeline defined in
-`helm/pipelines/build-multiarch-image.yaml`. It runs a credential pre-check
-first, then parallel `linux/amd64` and `linux/arm64` builds, and finally
-merges them into a single manifest.
+`helm/pipelines/build-multiarch-image.yaml`. It runs a credential pre-check,
+resolves the version from the `VERSION` file, runs parallel `linux/amd64` and
+`linux/arm64` builds, and finally merges them into a single manifest.
 
 Pipeline task order:
 
 ```
-verify-creds
-    ├── build-amd64 (parallel)
-    └── build-arm64 (parallel)
-            └── create-manifest
+verify-creds ── resolve-version
+                     ├── build-amd64 (parallel)
+                     └── build-arm64 (parallel)
+                             └── create-manifest
+                                     └── release-helm (tagged releases only)
 ```
+
+### Versioning
+
+`VERSION` (for example `v0.0.2`) is the source of truth for the current release.
+Git tags and the file keep the `v` prefix; **published artifacts drop it** and use
+bare SemVer (`0.0.2`), because Helm rejects a `v` prefix in a chart version. That
+bare version is the image tag, the chart `version` and the chart `appVersion`, and
+the pipeline fails if the release tag or `helm/Chart.yaml` do not match `VERSION`,
+so a version can never be published under the wrong tag.
+
+| Event | Published image tags |
+| --- | --- |
+| Push to `main` | `latest` |
+| Push tag `vX.Y.Z` | `X.Y.Z` (immutable) and `latest` |
+
+Tagged releases also publish the Helm chart as `smcprober-X.Y.Z`, so each release
+gets a unique chart version instead of overwriting the previous one.
 
 ### Prerequisites
 
 - [Tekton Pipelines](https://tekton.dev/docs/installation/pipelines/) installed in your cluster
 - [tkn CLI](https://tekton.dev/docs/cli/) installed locally
-- The `verify-dockerhub-creds`, `git-clone-and-build`, and `create-docker-manifest` Tasks
-  deployed to the `smc-cicd` namespace
+- The `verify-dockerhub-creds`, `resolve-version`, `git-clone-and-build`,
+  `create-docker-manifest`, and `package-helm` Tasks deployed to the `smc-cicd` namespace
 - A Kubernetes Secret named `docker-config` containing registry credentials in the
   `smc-cicd` namespace (Docker Hub by default)
 
@@ -459,8 +479,10 @@ verify-creds
 ```bash
 kubectl create namespace smc-cicd --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f helm/tasks/verify-dockerhub-creds.yaml
+kubectl apply -f helm/tasks/resolve-version.yaml
 kubectl apply -f helm/tasks/git-clone-and-build.yaml
 kubectl apply -f helm/tasks/create-docker-manifest.yaml
+kubectl apply -f helm/tasks/release-helm.yaml
 kubectl apply -f helm/pipelines/build-multiarch-image.yaml
 ```
 
@@ -479,12 +501,15 @@ tkn pipeline list -n smc-cicd
 
 ### Trigger a build
 
+`image` is the repository **without** a tag; the pipeline appends the resolved
+version. Leave `release-tag` empty for a `latest` build:
+
 ```bash
 tkn pipeline start build-multiarch-image \
   --namespace smc-cicd \
   --param repo=timgluz/smcprober \
   --param revision=main \
-  --param image=docker.io/tauho/smcprober:latest \
+  --param image=docker.io/tauho/smcprober \
   --param registry=docker.io \
   --workspace name=dockerconfig,secret=<docker-credentials-secret> \
   --showlog
@@ -494,6 +519,47 @@ Replace `<docker-credentials-secret>` with the name of your Secret. When pushing
 to a custom registry, set `--param image` and `--param registry` to that
 registry's host, and add `--param registry-insecure=true` only if it is served
 over plain HTTP.
+
+### Release a fixed version
+
+Bump `VERSION` (for example to `v0.0.3`), set `0.0.3` as `version` and `appVersion`
+in `helm/Chart.yaml`, add a `CHANGELOG.md` entry, merge to `main`, then tag:
+
+```bash
+task release:tag          # tags with the VERSION file value and pushes it
+```
+
+Or by hand:
+
+```bash
+git tag -a v0.0.3 -m "Release v0.0.3"
+git push origin v0.0.3
+```
+
+The tag push publishes `docker.io/tauho/smcprober:0.0.3`, moves `latest`, and
+publishes the Helm chart as `smcprober-0.0.3`. Deployments can then pin the fixed
+version (`task release:version` prints both forms):
+
+```bash
+helm upgrade --install smcprober ./helm -n smcprober \
+  --set image.repository=docker.io/tauho/smcprober \
+  --set image.tag=0.0.3
+```
+
+To publish a release manually instead of via a tag push, pass the tag in
+`release-tag` (it must match `VERSION`) and optionally move `latest`:
+
+```bash
+tkn pipeline start build-multiarch-image \
+  --namespace smc-cicd \
+  --param repo=timgluz/smcprober \
+  --param revision=v0.0.3 \
+  --param image=docker.io/tauho/smcprober \
+  --param release-tag=v0.0.3 \
+  --param additional-tag=latest \
+  --workspace name=dockerconfig,secret=<docker-credentials-secret> \
+  --showlog
+```
 
 ### Monitor runs
 
@@ -546,4 +612,6 @@ Go to the repository **Settings → Webhooks → Add webhook** and fill in:
 | Secret | the token from the step above |
 | Events | `Just the push event` |
 
-Only pushes to `main` trigger a build (other branches are filtered by the EventListener).
+Only pushes to `main` and `v*` tag pushes trigger builds; other branches are
+filtered by the EventListener. Tag pushes publish the fixed version from
+`VERSION`, while `main` pushes publish `latest`.

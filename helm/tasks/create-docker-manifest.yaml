@@ -7,10 +7,20 @@ spec:
   params:
     - name: image
       type: string
-      description: "Name of the multi-arch image to create"
+      description: "Image repository without a tag; the version is appended."
+    - name: version
+      type: string
+      description: "Image tag (version) for the multi-arch manifest."
+      default: latest
     - name: images
       type: array
       description: "List of arch-specific images"
+    - name: additional-tag
+      type: string
+      description: >-
+        Extra moving tag to also apply to the manifest (e.g. "latest").
+        Leave empty to publish only the version tag.
+      default: ""
     - name: registry-insecure
       type: string
       description: >-
@@ -28,7 +38,8 @@ spec:
       script: |
         #!/bin/bash
         set -e
-        IMAGE="$(params.image)"
+        IMAGE="$(params.image):$(params.version)"
+        ADDITIONAL_TAG="$(params.additional-tag)"
 
         # TLS verification is on by default; opt out only for plain-HTTP registries.
         INSECURE_FLAG=""
@@ -48,13 +59,25 @@ spec:
             "${IMAGE}" docker://${img}
         done
 
-        echo "Pushing manifest $(params.image)"
+        echo "Pushing manifest ${IMAGE}"
         buildah manifest push \
           ${INSECURE_FLAG} \
           --authfile /workspace/dockerconfig/.dockerconfigjson \
           --all \
           ${IMAGE} \
           docker://${IMAGE}
+
+        # Optionally publish the same manifest under a moving tag
+        if [ -n "${ADDITIONAL_TAG}" ]; then
+          ADDITIONAL_IMAGE="$(params.image):${ADDITIONAL_TAG}"
+          echo "Also pushing manifest as ${ADDITIONAL_IMAGE}"
+          buildah manifest push \
+            ${INSECURE_FLAG} \
+            --authfile /workspace/dockerconfig/.dockerconfigjson \
+            --all \
+            ${IMAGE} \
+            docker://${ADDITIONAL_IMAGE}
+        fi
       securityContext:
         privileged: true
       volumeMounts:

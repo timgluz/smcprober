@@ -13,7 +13,23 @@ spec:
       default: main
     - name: image
       type: string
-      default: docker.io/tauho/smcprober:latest
+      description: Image repository without a tag; the resolved version is appended.
+      default: docker.io/tauho/smcprober
+    - name: release-tag
+      type: string
+      description: >-
+        Git tag being released (e.g. v0.0.3). It must match the VERSION file, and
+        the image is published under that immutable tag. Leave empty for
+        non-release builds, which publish the moving "latest" tag.
+      default: ""
+    - name: additional-tag
+      type: string
+      description: Extra moving tag applied to the manifest (e.g. latest). Empty disables it.
+      default: ""
+    - name: oci-registry
+      type: string
+      description: OCI registry URL used to publish the Helm chart on tagged releases.
+      default: oci://registry-1.docker.io/tauho
     - name: registry
       type: string
       description: Registry host whose credentials are verified; must match the image registry.
@@ -36,10 +52,19 @@ spec:
           value: $(params.registry)
         - name: registry-insecure
           value: $(params.registry-insecure)
+    - name: resolve-version
+      taskRef:
+        name: resolve-version
+      params:
+        - name: repo
+          value: $(params.repo)
+        - name: release-tag
+          value: $(params.release-tag)
     - name: build-amd64
       retries: 3
       runAfter:
         - verify-creds
+        - resolve-version
       taskRef:
         name: git-clone-and-build
       workspaces:
@@ -52,6 +77,8 @@ spec:
           value: $(params.revision)
         - name: image
           value: $(params.image)
+        - name: version
+          value: $(tasks.resolve-version.results.version)
         - name: platform
           value: linux/amd64
         - name: registry-insecure
@@ -60,6 +87,7 @@ spec:
       retries: 3
       runAfter:
         - verify-creds
+        - resolve-version
       taskRef:
         name: git-clone-and-build
       workspaces:
@@ -72,6 +100,8 @@ spec:
           value: $(params.revision)
         - name: image
           value: $(params.image)
+        - name: version
+          value: $(tasks.resolve-version.results.version)
         - name: platform
           value: linux/arm64
         - name: registry-insecure
@@ -88,9 +118,37 @@ spec:
       params:
         - name: image
           value: $(params.image)
+        - name: version
+          value: $(tasks.resolve-version.results.version)
+        - name: additional-tag
+          value: $(params.additional-tag)
         - name: images
           value:
-            - $(params.image)-amd64
-            - $(params.image)-arm64
+            - $(tasks.build-amd64.results.image)
+            - $(tasks.build-arm64.results.image)
+        - name: registry-insecure
+          value: $(params.registry-insecure)
+    # Tagged releases also publish the Helm chart at the same version.
+    - name: release-helm
+      runAfter:
+        - create-manifest
+      when:
+        - input: $(params.release-tag)
+          operator: notin
+          values: [""]
+      taskRef:
+        name: package-helm
+      workspaces:
+        - name: dockerconfig
+          workspace: dockerconfig
+      params:
+        - name: repo
+          value: $(params.repo)
+        - name: revision
+          value: $(params.revision)
+        - name: version
+          value: $(tasks.resolve-version.results.version)
+        - name: oci-registry
+          value: $(params.oci-registry)
         - name: registry-insecure
           value: $(params.registry-insecure)

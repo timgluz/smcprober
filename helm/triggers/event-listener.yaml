@@ -6,6 +6,7 @@ metadata:
 spec:
   serviceAccountName: tekton-triggers-sa
   triggers:
+    # Pushes to main publish the moving "latest" tag.
     - name: github-push-main
       interceptors:
         - ref:
@@ -28,5 +29,30 @@ spec:
                   expression: "body.ref.split('/')[2]"
       bindings:
         - ref: github-push-binding
+      template:
+        ref: build-multiarch-image-template
+    # Pushing a v* tag publishes an immutable release version (and moves "latest").
+    - name: github-tag-release
+      interceptors:
+        - ref:
+            name: github
+          params:
+            - name: secretRef
+              value:
+                secretName: github-webhook-secret
+                secretKey: secretToken
+            - name: eventTypes
+              value: ["push"]
+        - ref:
+            name: cel
+          params:
+            - name: filter
+              value: "body.ref.startsWith('refs/tags/v')"
+            - name: overlays
+              value:
+                - key: tag_name
+                  expression: "body.ref.split('/')[2]"
+      bindings:
+        - ref: github-tag-binding
       template:
         ref: build-multiarch-image-template

@@ -20,12 +20,19 @@ spec:
     - name: platform
       type: string
       description: The target platform for the Docker image (e.g., linux/amd64, linux/arm64).
+    - name: version
+      type: string
+      description: Image tag (version) to build and push, before the arch suffix.
+      default: latest
     - name: registry-insecure
       type: string
       description: >-
         Set to "true" to skip TLS verification when pushing to the registry.
         Only use this for registries served over plain HTTP.
       default: "false"
+  results:
+    - name: image
+      description: The pushed arch-specific image reference (repository, version and arch).
   workspaces:
     - name: dockerconfig
       description: The workspace containing Docker configuration (e.g., for authentication).
@@ -51,7 +58,8 @@ spec:
         cd /workspace/source
 
         ARCH=$(echo $(params.platform) | cut -d'/' -f2)
-        IMAGE_WITH_ARCH=$(params.image)-${ARCH}
+        IMAGE="$(params.image):$(params.version)"
+        IMAGE_WITH_ARCH="${IMAGE}-${ARCH}"
 
         # TLS verification is on by default; opt out only for plain-HTTP registries.
         INSECURE_FLAG=""
@@ -59,7 +67,7 @@ spec:
           INSECURE_FLAG="--tls-verify=false"
         fi
 
-        echo "Building for $(params.platform)"
+        echo "Building ${IMAGE_WITH_ARCH} for $(params.platform)"
         buildah build \
           --platform $(params.platform) \
           --tag ${IMAGE_WITH_ARCH} \
@@ -71,6 +79,8 @@ spec:
           ${INSECURE_FLAG} \
           --authfile /workspace/dockerconfig/.dockerconfigjson \
           ${IMAGE_WITH_ARCH}
+
+        printf '%s' "${IMAGE_WITH_ARCH}" > "$(results.image.path)"
       securityContext:
         privileged: true
       volumeMounts:

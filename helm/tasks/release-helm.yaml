@@ -61,7 +61,11 @@ spec:
         set -e
         cd /workspace/source
         echo "Packaging Helm chart from $(params.chart-path) with version $(params.version)"
-        helm package $(params.chart-path) --app-version "$(params.version)"
+        # Set both the chart version and the app version so a release always
+        # publishes a unique chart version instead of overwriting the previous one.
+        helm package $(params.chart-path) \
+          --version "$(params.version)" \
+          --app-version "$(params.version)"
 
     - name: push-helm-chart
       image: alpine/helm:4
